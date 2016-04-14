@@ -1,0 +1,21 @@
+#menu {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 2em;
+	background-color: lightgray;
+}
+
+#display {
+	position: fixed;
+	top: 2em;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+#display .node {
+	position: absolute;
+	
+}
