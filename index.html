@@ -9,7 +9,7 @@
 	<body>
 		<div id="menu">
 			<label for="chanceInsert">Insert chance</label>
-			<input type="range" id="chanceInsert" value="45" min="0" max="100">
+			<input type="range" id="chanceInsert" value="40" min="0" max="100">
 			
 			<label for="chanceJoin">Join chance</label>
 			<input type="range" id="chanceJoin" value="25" min="0" max="100">
@@ -17,9 +17,8 @@
 			<label for="chanceAppend">Append chance</label>
 			<input type="range" id="chanceAppend" value="50" min="0" max="100">
 			
-			<input type="button" onclick="dungeon.addNode()" value="Add node">
-			<input type="button" onclick="dungeon.toggleRepositioning()" value="Toggle relaxation">
-			<input type="button" onclick="createDungeon()" value="Clear">
+			<input type="button" onclick="createDungeon(true)" value="Generate slowly">
+			<input type="button" onclick="createDungeon(false)" value="Generate quickly">
 		</div>
 		
 		<div id="mapRoot"></div>

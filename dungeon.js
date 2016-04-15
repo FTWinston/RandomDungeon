@@ -140,7 +140,7 @@ Node.prototype = {
 		// however, things look good without it - so is this really necessary?
 		
 		// prevent any enormous forces from being created
-		var forceLimit = 5, forceMagnitude = force.length();
+		var forceLimit = 2, forceMagnitude = force.length();
 		if (forceMagnitude > forceLimit) {
 			force.x *= forceLimit / forceMagnitude;
 			force.y *= forceLimit / forceMagnitude;
@@ -213,12 +213,13 @@ Link.prototype = {
 	}
 };
 
-function Dungeon(container) {
+function Dungeon(container, animated) {
 	this.root = container;
 	this.root.innerHTML = '<canvas></canvas>';
 	this.canvas = this.root.childNodes[0];
 	this.scale = 100;
-	this.repositioningIntervalID = null;
+	this.intervalID = null;
+	this.animated = animated;
 		
 	var node1 = new Node(this, new Coord(0, 0));
 	var node2 = new Node(this, new Coord(0, 1));
@@ -231,18 +232,110 @@ function Dungeon(container) {
 	
 	this.links = [link1, link2];
 	
-	window.onresize = this.updateSize.bind(this);
+	this.resizeListener = this.updateSize.bind(this);
+	window.addEventListener('resize', this.resizeListener);
+	
 	this.updateSize();
-	this.toggleRepositioning(true)
+	this.generate();
 }
 
 Dungeon.prototype = {
 	constructor: Dungeon,
+	destroy: function() {
+		window.removeEventListener('resize', this.resizeListener);
+		
+		if (this.intervalID !== null)
+			window.clearInterval(this.intervalID);
+	},
 	updateSize: function() {
 		this.canvas.setAttribute('width', this.root.offsetWidth);
 		this.canvas.setAttribute('height', this.root.offsetHeight);
 		
 		this.draw();
+	},
+	generate: function() {
+		this.intervalID = null;
+		
+		var sequence = this.populateNodes();
+		
+		// TODO: align nodes to integer coordinates
+		
+		// TODO: reposition to fit on screen
+		
+		// TODO: expand nodes & links to take up actual volumes
+		
+		if (!this.animated)
+			sequence = sequence.then(function () {
+				this.draw();
+			}.bind(this));
+	},
+	populateNodes: function() {
+		var numNodeAddSteps = randomInt(8) + 5;
+		
+		var addNodeStep = function() {
+			this.addNode();
+			if (this.animated)
+				this.draw();
+			
+			return this.settleNodes(20);
+		}.bind(this);
+		
+		var sequence = Promise.resolve();
+		for (var i=0; i<numNodeAddSteps; i++) 
+			sequence = sequence.then(addNodeStep);
+		
+		sequence = sequence.then(function () {
+			return this.settleNodes(100);
+		}.bind(this));
+		
+		return sequence;
+	},
+	settleNodes: function (settleSteps) {
+		var settledStepSizeLimit = 0.01;
+		
+		if (this.animated)
+			return new Promise(function(resolve, reject) {
+				var num = 0;
+				this.intervalID = window.setInterval(function () {
+					var finishEarly = this.repositionNodes() <= settledStepSizeLimit;
+					this.draw();
+					
+					if (finishEarly || ++num >= settleSteps) {
+						window.clearInterval(this.intervalID);
+						resolve();
+					}
+				}.bind(this), 50);
+			}.bind(this));
+		else
+			return new Promise(function(resolve, reject) {
+				for (var i=0; i<settleSteps; i++)
+					if (this.repositionNodes() <= settledStepSizeLimit) {
+						console.log('settled early, after ' + (i+1) + '/' + (settleSteps+1) + ' steps');
+						break;
+					}
+				resolve();
+			}.bind(this));
+	},
+	repositionNodes: function () {
+		// add up all the forces on each node, and then apply them
+		var biggestForce = 0;
+		
+		for (var i=0; i<this.nodes.length; i++) {
+			var node = this.nodes[i];
+			node.force = node.calculateForce();
+			
+			var size = node.force.length();
+			if (size > biggestForce)
+				biggestForce = size;
+		}
+		
+		for (var i=0; i<this.nodes.length; i++) {
+			var node = this.nodes[i];
+			node.pos.applyOffset(node.force);
+			delete node.force;
+		}
+		
+		return biggestForce;
 	},
 	addNode: function () {
 		var insertChance = parseInt(document.getElementById('chanceInsert').value);
@@ -257,8 +350,6 @@ Dungeon.prototype = {
 			this.joinNodes();
 		else
 			this.appendNode();
-		
-		this.draw();
 	},
 	insertNode: function () {
 		// randomly pick a link to interrupt with a new node
@@ -302,33 +393,6 @@ Dungeon.prototype = {
 		var newLink = new Link(node, newNode);
 		this.links.push(newLink);
 	},
-	toggleRepositioning: function (start) {
-		if (start === undefined)
-			start = this.repositioningIntervalID == null;
-		
-		if (start) {
-			this.repositioningIntervalID = window.setInterval(this.reposition.bind(this), 50)
-		}
-		else if (this.repositioningIntervalID != null) {
-			window.clearInterval(this.repositioningIntervalID);
-			this.repositioningIntervalID = null;
-		}
-	},
-	reposition: function () {
-		// add up all the forces on each node, and then apply them
-		for (var i=0; i<this.nodes.length; i++) {
-			var node = this.nodes[i];
-			node.force = node.calculateForce();
-		}
-		
-		for (var i=0; i<this.nodes.length; i++) {
-			var node = this.nodes[i];
-			node.pos.applyOffset(node.force);
-			delete node.force;
-		}
-		
-		this.draw();
-	},
 	draw: function () {
 		var ctx = this.canvas.getContext('2d');
 		ctx.clearRect(0, 0, this.root.offsetWidth, this.root.offsetHeight);
@@ -344,11 +408,9 @@ Dungeon.prototype = {
 }
 
 var dungeon = null;
-function createDungeon() {
+function createDungeon(animated) {
 	if (dungeon != null)
-		dungeon.toggleRepositioning(false);
-	
-	dungeon = new Dungeon(document.getElementById('mapRoot'));
+		dungeon.destroy();
+		
+	dungeon = new Dungeon(document.getElementById('mapRoot'), animated);
 }
-
-createDungeon();
