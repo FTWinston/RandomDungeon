@@ -4,6 +4,10 @@ function randomInt(length) {
 	return Math.floor(Math.random() * length);
 }
 
+function lerp(val1, val2, fraction) {
+  return (1-fraction)*val1 + fraction*val2;
+}
+
 function Coord(x, y) {
 	this.x = x;
 	this.y = y;
@@ -14,7 +18,7 @@ Coord.prototype = {
 	magnitudeOf: function (dx, dy) {
 		return Math.sqrt(dx * dx + dy * dy);
 	},
-	length: function() {
+	length: function () {
 		return this.magnitudeOf(this.x, this.y);
 	},
 	distanceTo: function (other) {
@@ -30,7 +34,7 @@ Coord.prototype = {
 	halfwayTo: function (other) {
 		return new Coord((this.x + other.x) / 2, (this.y + other.y) / 2);
 	},
-	createAdjacent: function(other) {
+	createAdjacent: function (other) {
 		var pick = randomInt(8);
 		var dx, dy;
 		
@@ -64,12 +68,12 @@ Coord.prototype = {
 		
 		return new Coord(this.x + dx, this.y + dy);
 	},
-	applyOffset: function(other) {
+	applyOffset: function (other) {
 		this.x += other.x;
 		this.y += other.y;
 		return this;
 	},
-	scale: function(scale) {
+	scale: function (scale) {
 		this.x *= scale;
 		this.y *= scale;
 		return this;
@@ -79,7 +83,7 @@ Coord.prototype = {
 function Node(parent, pos) {
 	this.parent = parent;
 	this.pos = pos;
-	this.radius = 0.15;
+	this.radius = 1.5;
 	this.links = [];
 }
 
@@ -100,7 +104,7 @@ Node.prototype = {
 			force.applyOffset(componentForce);
 		}
 		
-		var forceCutoffDist = 0.8, nodeRepulsionForce = 0.001, linkRepulsionForce = 0.0005;
+		var forceCutoffDist = 8, nodeRepulsionForce = 0.3, linkRepulsionForce = 0.1;
 		
 		// additionally, push away from any other node that is too close
 		for (var i=0; i<this.parent.nodes.length; i++) {
@@ -140,7 +144,7 @@ Node.prototype = {
 		// however, things look good without it - so is this really necessary?
 		
 		// prevent any enormous forces from being created
-		var forceLimit = 2, forceMagnitude = force.length();
+		var forceLimit = 10, forceMagnitude = force.length();
 		if (forceMagnitude > forceLimit) {
 			force.x *= forceLimit / forceMagnitude;
 			force.y *= forceLimit / forceMagnitude;
@@ -148,7 +152,7 @@ Node.prototype = {
 		
 		return force;
 	},
-	distanceFromLink: function(link) {
+	distanceFromLink: function (link) {
 		var A = this.pos.x - link.fromNode.pos.x;
 		var B = this.pos.y - link.fromNode.pos.y;
 		var C = link.toNode.pos.x - link.fromNode.pos.x;
@@ -179,11 +183,11 @@ Node.prototype = {
 		var dy = this.pos.y - yy;
 		return Math.sqrt(dx * dx + dy * dy);
 	},
-	draw: function(ctx, scale) {
+	draw: function (ctx, scale) {
 		ctx.fillStyle = '#c00';
 		
 		ctx.beginPath();
-		ctx.arc(this.pos.x * scale + scale, this.pos.y * scale + scale, scale * this.radius, 0, 2*Math.PI);
+		ctx.arc(this.pos.x * scale, this.pos.y * scale, scale * this.radius, 0, 2*Math.PI);
 		ctx.fill();
 	}
 };
@@ -191,7 +195,7 @@ Node.prototype = {
 function Link(fromNode, toNode) {
 	this.fromNode = fromNode;
 	this.toNode = toNode;
-	this.restLength = 1;
+	this.restLength = 10;
 	this.springConstant = 0.1;
 	
 	fromNode.links.push(this);
@@ -203,12 +207,12 @@ Link.prototype = {
 	getDistanceFromRest: function () {
 		return this.fromNode.pos.distanceTo(this.toNode.pos) - this.restLength;
 	},
-	draw: function(ctx, scale) {
+	draw: function (ctx, scale) {
 		ctx.strokeStyle = '#000';
 		
 		ctx.beginPath();
-		ctx.moveTo(this.fromNode.pos.x * scale + scale, this.fromNode.pos.y * scale + scale);
-		ctx.lineTo(this.toNode.pos.x * scale + scale, this.toNode.pos.y * scale + scale);
+		ctx.moveTo(this.fromNode.pos.x * scale, this.fromNode.pos.y * scale);
+		ctx.lineTo(this.toNode.pos.x * scale, this.toNode.pos.y * scale);
 		ctx.stroke();
 	}
 };
@@ -217,13 +221,13 @@ function Dungeon(container, animated) {
 	this.root = container;
 	this.root.innerHTML = '<canvas></canvas>';
 	this.canvas = this.root.childNodes[0];
-	this.scale = 100;
+	this.scale = 10;
 	this.intervalID = null;
 	this.animated = animated;
 		
-	var node1 = new Node(this, new Coord(0, 0));
-	var node2 = new Node(this, new Coord(0, 1));
-	var node3 = new Node(this, new Coord(1, 0));
+	var node1 = new Node(this, new Coord(20, 20));
+	var node2 = new Node(this, new Coord(20, 30));
+	var node3 = new Node(this, new Coord(30, 20));
 	
 	this.nodes = [node1, node2, node3];
 	
@@ -241,24 +245,23 @@ function Dungeon(container, animated) {
 
 Dungeon.prototype = {
 	constructor: Dungeon,
-	destroy: function() {
+	destroy: function () {
 		window.removeEventListener('resize', this.resizeListener);
 		
 		if (this.intervalID !== null)
 			window.clearInterval(this.intervalID);
 	},
-	updateSize: function() {
+	updateSize: function () {
 		this.canvas.setAttribute('width', this.root.offsetWidth);
 		this.canvas.setAttribute('height', this.root.offsetHeight);
 		
 		this.draw();
 	},
-	generate: function() {
+	generate: function () {
 		this.intervalID = null;
 		
-		var sequence = this.populateNodes();
-		
-		// TODO: align nodes to integer coordinates
+		var sequence = this.populateNodes()
+			.then(function() { return this.alignNodes() }.bind(this));
 		
 		// TODO: reposition to fit on screen
 		
@@ -269,10 +272,10 @@ Dungeon.prototype = {
 				this.draw();
 			}.bind(this));
 	},
-	populateNodes: function() {
+	populateNodes: function () {
 		var numNodeAddSteps = randomInt(8) + 5;
 		
-		var addNodeStep = function() {
+		var addNodeStep = function () {
 			this.addNode();
 			if (this.animated)
 				this.draw();
@@ -294,7 +297,7 @@ Dungeon.prototype = {
 		var settledStepSizeLimit = 0.01;
 		
 		if (this.animated)
-			return new Promise(function(resolve, reject) {
+			return new Promise(function (resolve, reject) {
 				var num = 0;
 				this.intervalID = window.setInterval(function () {
 					var finishEarly = this.repositionNodes() <= settledStepSizeLimit;
@@ -307,7 +310,7 @@ Dungeon.prototype = {
 				}.bind(this), 50);
 			}.bind(this));
 		else
-			return new Promise(function(resolve, reject) {
+			return new Promise(function (resolve, reject) {
 				for (var i=0; i<settleSteps; i++)
 					if (this.repositionNodes() <= settledStepSizeLimit) {
 						console.log('settled early, after ' + (i+1) + '/' + (settleSteps+1) + ' steps');
@@ -336,6 +339,37 @@ Dungeon.prototype = {
 		}
 		
 		return biggestForce;
+	},
+	alignNodes: function () {
+		// align nodes to integer coordinates
+		if (this.animated)
+			return new Promise(function (resolve, reject) {
+				var num = 0, lerpSteps = 20;
+				this.intervalID = window.setInterval(function () {
+					num++;
+					var fraction = num / lerpSteps;
+					for (var i=0; i<this.nodes.length; i++) {
+						var node = this.nodes[i];
+						node.pos.x = lerp(node.pos.x, Math.round(node.pos.x), fraction);
+						node.pos.y = lerp(node.pos.y, Math.round(node.pos.y), fraction);
+					}
+					this.draw();
+					
+					if (num >= lerpSteps) {
+						window.clearInterval(this.intervalID);
+						resolve();
+					}
+				}.bind(this), 50);
+			}.bind(this));
+		else
+			return new Promise(function (resolve, reject) {
+				for (var i=0; i<this.nodes.length; i++) {
+					var node = this.nodes[i];
+					node.pos.x = Math.round(node.pos.x);
+					node.pos.y = Math.round(node.pos.y);
+				}
+				resolve();
+			}.bind(this));
 	},
 	addNode: function () {
 		var insertChance = parseInt(document.getElementById('chanceInsert').value);
