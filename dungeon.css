@@ -7,7 +7,7 @@
 	background-color: lightgray;
 }
 
-#display {
+#mapRoot {
 	position: fixed;
 	top: 2em;
 	left: 0;
@@ -15,7 +15,7 @@
 	bottom: 0;
 }
 
-#display .node {
+#mapRoot .node {
 	position: absolute;
 	
 }
