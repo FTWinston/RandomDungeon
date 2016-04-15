@@ -261,8 +261,8 @@ Dungeon.prototype = {
 		this.intervalID = null;
 		
 		var sequence = this.populateNodes()
-			.then(function() { return this.alignNodes() }.bind(this));
-		
+			.then(function() { return this.alignNodes() }.bind(this))
+			.then(function() { return this.fitOnScreen() }.bind(this));
 		// TODO: reposition to fit on screen
 		
 		// TODO: expand nodes & links to take up actual volumes
@@ -370,6 +370,43 @@ Dungeon.prototype = {
 				}
 				resolve();
 			}.bind(this));
+	},
+	fitOnScreen: function() {
+		return new Promise(function (resolve, reject) {
+			var minX = Number.MAX_VALUE, minY = Number.MAX_VALUE;
+			for (var i=0; i<this.nodes.length; i++) {
+					var node = this.nodes[i];
+					minX = Math.min(minX, node.pos.x);
+					minY = Math.min(minY, node.pos.y);
+				}
+			minX -= 10;
+			minY -= 10;
+			
+			if (this.animated) {
+				var num = 0, lerpSteps = 20;
+				var stepX = -minX / lerpSteps, stepY = -minY / lerpSteps;
+				this.intervalID = window.setInterval(function () {
+					for (var i=0; i<this.nodes.length; i++) {
+						var node = this.nodes[i];
+						node.pos.x += stepX;
+						node.pos.y += stepY;
+						this.draw();
+					}
+					if (++num >= lerpSteps) {
+						window.clearInterval(this.intervalID);
+						resolve();
+					}
+				}.bind(this), 50);
+			}
+			else {
+				for (var i=0; i<this.nodes.length; i++) {
+					var node = this.nodes[i];
+					node.pos.x -= minX;
+					node.pos.y -= minY;
+				}
+				resolve();
+			}
+		}.bind(this));
 	},
 	addNode: function () {
 		var insertChance = parseInt(document.getElementById('chanceInsert').value);
