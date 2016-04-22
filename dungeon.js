@@ -8,6 +8,20 @@ function lerp(val1, val2, fraction) {
   return (1-fraction)*val1 + fraction*val2;
 }
 
+function crossProduct(pos1, pos2) {
+	return pos1.x * pos2.y - pos1.y * pos2.x;
+}
+
+function allEqual(args) {
+	var firstValue = args[0];
+	for (var i = 1; i < args.length; i += 1) {
+		if (args[i] != firstValue) {
+			return false;
+		}
+	}
+	return true;
+}
+
 function Coord(x, y) {
 	this.x = x;
 	this.y = y;
@@ -20,6 +34,16 @@ Coord.prototype = {
 	},
 	length: function () {
 		return this.magnitudeOf(this.x, this.y);
+	},
+	equals: function (other) {
+		return this.x == other.x && this.y == other.y;
+	},
+	subtract: function (other) {
+		return new Coord(this.x - other.x, this.y - other.y);
+	},
+	toUnitLength: function () {
+		var length = this.length();
+		return new Coord(this.x / length, this.y / length);
 	},
 	distanceTo: function (other) {
 		return this.magnitudeOf(this.x - other.x, this.y - other.y);
@@ -42,28 +66,28 @@ Coord.prototype = {
 		case 0:
 		case 3:
 		case 5:
-			dx = -1;
+			dx = -2;
 		case 1:
 		case 6:
 			dx = 0;
 		case 2:
 		case 4:
 		case 7:
-			dx = 1;
+			dx = 2;
 		}
 		
 		switch (pick) {
 		case 0:
 		case 1:
 		case 2:
-			dy = -1;
+			dy = -2;
 		case 3:
 		case 4:
 			dy = 0;
 		case 5:
 		case 6:
 		case 7:
-			dy = 1;
+			dy = 2;
 		}
 		
 		return new Coord(this.x + dx, this.y + dy);
@@ -91,7 +115,7 @@ Node.prototype = {
 	constructor: Node,
 	calculateForce: function () {
 		var force = new Coord(0, 0);
-		
+		/*
 		// treat each link like a spring. if its length is too short, push away.
 		// if its length is too long, pull apart
 		for (var i=0; i<this.links.length; i++) {
@@ -103,10 +127,10 @@ Node.prototype = {
 			
 			force.applyOffset(componentForce);
 		}
+		*/
+		var forceCutoffDist = 8, nodeRepulsionForce = 1, linkRepulsionForce = 0.3;
 		
-		var forceCutoffDist = 8, nodeRepulsionForce = 0.3, linkRepulsionForce = 0.1;
-		
-		// additionally, push away from any other node that is too close
+		// push away from any other node that is too close
 		for (var i=0; i<this.parent.nodes.length; i++) {
 			var otherNode = this.parent.nodes[i];
 			if (otherNode == this)
@@ -122,7 +146,7 @@ Node.prototype = {
 			force.applyOffset(componentForce);
 		}
 		
-		// if a node is touching a link it doesn't connect with, push away
+		// push away from links you don't connect with ... tangentially
 		for (var i=0; i<this.parent.links.length; i++) {
 			var link = this.parent.links[i];
 			
@@ -130,24 +154,31 @@ Node.prototype = {
 				continue;
 			
 			var dist = this.distanceFromLink(link);
-			if (dist > forceCutoffDist)
+			if (dist > forceCutoffDist || dist == 0)
 				continue;
 			
-			var midpoint = link.fromNode.pos.halfwayTo(link.toNode.pos);
 			var scalarComponent = linkRepulsionForce / dist / dist;
-			var componentForce = this.pos.directionTo(midpoint).scale(-scalarComponent);
 			
+			var linkDir = link.toNode.pos.subtract(link.fromNode.pos).toUnitLength();
+			var perpDir = new Coord(linkDir.y, -linkDir.x);
+			
+			// is this pointed towards the link? If so, need to reverse it.
+			var compareTo = this.pos.subtract(link.fromNode.pos).toUnitLength();
+			if (compareTo.x * perpDir.x + compareTo.y * perpDir.y < 0) {
+				perpDir.x = -perpDir.x;
+				perpDir.y = -perpDir.y;
+			}
+			
+			var componentForce = perpDir.scale(scalarComponent);
 			force.applyOffset(componentForce);
 		}
 		
-		// ought to apply dampening to the calculated force now, which should be proportional to velocity
-		// however, things look good without it - so is this really necessary?
-		
 		// prevent any enormous forces from being created
-		var forceLimit = 10, forceMagnitude = force.length();
-		if (forceMagnitude > forceLimit) {
-			force.x *= forceLimit / forceMagnitude;
-			force.y *= forceLimit / forceMagnitude;
+		var forceLimit = 5;
+		if (force.length() > forceLimit) {
+			force = force.toUnitLength();
+			force.x *= forceLimit;
+			force.y *= forceLimit;
 		}
 		
 		return force;
@@ -192,10 +223,10 @@ Node.prototype = {
 	}
 };
 
-function Link(fromNode, toNode) {
+function Link(fromNode, toNode, length) {
 	this.fromNode = fromNode;
 	this.toNode = toNode;
-	this.restLength = 10;
+	this.restLength = length === undefined ? Math.random() * 10 + 5 : length;
 	this.springConstant = 0.1;
 	
 	fromNode.links.push(this);
@@ -206,6 +237,43 @@ Link.prototype = {
 	constructor: Link,
 	getDistanceFromRest: function () {
 		return this.fromNode.pos.distanceTo(this.toNode.pos) - this.restLength;
+	},
+	intersectsLine: function (pos1, pos2) {
+		var r = this.toNode.pos.subtract(this.fromNode.pos);
+		var s = pos2.subtract(pos1);
+
+		var uNumerator = crossProduct(pos1.subtract(this.fromNode.pos), r);
+		var denominator = crossProduct(r, s);
+
+		if (uNumerator == 0 && denominator == 0) {
+			// They are colinear
+			
+			// Do they touch? (Are any of the points equal?)
+			if (this.fromNode.pos.equals(pos1) || this.fromNode.pos.equals(pos2) || this.toNode.pos.equals(pos1) || this.toNode.pos.equals(pos2)) {
+				return true;
+			}
+			
+			// Do they overlap? (Are all the point differences in either direction the same sign)
+			return !allEqual(
+					(node1.x - this.fromNode.x < 0),
+					(node1.x - this.toNode.x < 0),
+					(node2.x - this.fromNode.x < 0),
+					(node2.x - this.toNode.x < 0)) ||
+				!allEqual(
+					(node1.y - this.fromNode.y < 0),
+					(node1.y - this.toNode.y < 0),
+					(node2.y - this.fromNode.y < 0),
+					(node2.y - this.toNode.y < 0));
+		}
+
+		if (denominator == 0) {
+			// lines are parallel
+			return false;
+		}
+
+		var u = uNumerator / denominator;
+		var t = crossProduct(pos1.subtract(this.fromNode.pos), s) / denominator;
+		return t > 0 && t < 1 && u > 0 && u < 1;
 	},
 	draw: function (ctx, scale) {
 		ctx.strokeStyle = '#000';
@@ -263,7 +331,6 @@ Dungeon.prototype = {
 		var sequence = this.populateNodes()
 			.then(function() { return this.alignNodes() }.bind(this))
 			.then(function() { return this.fitOnScreen() }.bind(this));
-		// TODO: reposition to fit on screen
 		
 		// TODO: expand nodes & links to take up actual volumes
 		
@@ -273,27 +340,27 @@ Dungeon.prototype = {
 			}.bind(this));
 	},
 	populateNodes: function () {
-		var numNodeAddSteps = randomInt(8) + 5;
+		var numNodeAddSteps = parseInt(document.getElementById('numSteps').value);
 		
 		var addNodeStep = function () {
 			this.addNode();
 			if (this.animated)
 				this.draw();
 			
-			return this.settleNodes(20);
+			return this.settleNodes(20, true);
 		}.bind(this);
 		
-		var sequence = Promise.resolve();
+		var sequence = this.settleNodes(10, this.animated);
 		for (var i=0; i<numNodeAddSteps; i++) 
 			sequence = sequence.then(addNodeStep);
 		
 		sequence = sequence.then(function () {
-			return this.settleNodes(100);
+			return this.settleNodes(100, true);
 		}.bind(this));
 		
 		return sequence;
 	},
-	settleNodes: function (settleSteps) {
+	settleNodes: function (settleSteps, canFinishEarly) {
 		var settledStepSizeLimit = 0.01;
 		
 		if (this.animated)
@@ -303,7 +370,7 @@ Dungeon.prototype = {
 					var finishEarly = this.repositionNodes() <= settledStepSizeLimit;
 					this.draw();
 					
-					if (finishEarly || ++num >= settleSteps) {
+					if ((canFinishEarly && finishEarly) || ++num >= settleSteps) {
 						window.clearInterval(this.intervalID);
 						resolve();
 					}
@@ -312,10 +379,8 @@ Dungeon.prototype = {
 		else
 			return new Promise(function (resolve, reject) {
 				for (var i=0; i<settleSteps; i++)
-					if (this.repositionNodes() <= settledStepSizeLimit) {
-						console.log('settled early, after ' + (i+1) + '/' + (settleSteps+1) + ' steps');
+					if (this.repositionNodes() <= settledStepSizeLimit)
 						break;
-					}
 				resolve();
 			}.bind(this));
 	},
@@ -437,20 +502,47 @@ Dungeon.prototype = {
 	joinNodes: function () {
 		// pick two nodes
 		var fromNode = this.nodes[randomInt(this.nodes.length)];
-		var toNode;
-		do {
-			toNode = this.nodes[randomInt(this.nodes.length)];
-		} while (toNode == fromNode);
 		
-		// if they're already linked, just do nothing
-		for (var i=0; i<fromNode.links.length; i++) {
-			var link = fromNode.links[i];
-			if (link.toNode === toNode || link.fromNode === toNode) {
-				return;
+		var possibleToNodes = [];
+		for (var i=0; i<this.nodes.length; i++) {
+			var node = this.nodes[i];
+			if (node === fromNode)
+				continue;
+			
+			// if already linked, don't do it twice
+			var invalid = false;
+			for (var j=0; j<fromNode.links.count; j++) {
+				var link = fromNode.links[j];
+				if (link.toNode === node || link.fromNode === node) {
+					invalid = true;
+					break;
+				}
 			}
+			
+			if (invalid)
+				continue;
+			
+			// test each link. if none intersect, this is a possibility
+			invalid = false;
+			for (var j=0; j<this.links.length; j++) {
+				var link = this.links[j];
+				if (link.intersectsLine(fromNode.pos, node.pos)) {
+					invalid = true;
+					break;
+				}
+			}
+			
+			if (invalid)
+				continue;
+			
+			possibleToNodes.push(node);
 		}
 		
-		// otherwise, add a link between them.
+		if (possibleToNodes.length == 0)
+			return; // no valid, unobscured links from this node
+		
+		// pick a possibility & add a link
+		var toNode = possibleToNodes[randomInt(possibleToNodes.length)];
 		var newLink = new Link(fromNode, toNode);
 		this.links.push(newLink);
 	},
