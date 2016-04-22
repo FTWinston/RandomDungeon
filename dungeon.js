@@ -290,6 +290,7 @@ function Dungeon(container, animated) {
 	this.root.innerHTML = '<canvas></canvas>';
 	this.canvas = this.root.childNodes[0];
 	this.scale = 10;
+	this.drawGrid = false;
 	this.intervalID = null;
 	this.animated = animated;
 		
@@ -304,24 +305,29 @@ function Dungeon(container, animated) {
 	
 	this.links = [link1, link2];
 	
-	this.resizeListener = this.updateSize.bind(this);
-	window.addEventListener('resize', this.resizeListener);
+	if (this.animated) {
+		this.resizeListener = this.updateSize.bind(this);
+		window.addEventListener('resize', this.resizeListener);
 	
-	this.updateSize();
+		this.updateSize();
+	}
 	this.generate();
 }
 
 Dungeon.prototype = {
 	constructor: Dungeon,
 	destroy: function () {
-		window.removeEventListener('resize', this.resizeListener);
+		if (this.animated)
+			window.removeEventListener('resize', this.resizeListener);
 		
 		if (this.intervalID !== null)
 			window.clearInterval(this.intervalID);
 	},
 	updateSize: function () {
-		this.canvas.setAttribute('width', this.root.offsetWidth);
-		this.canvas.setAttribute('height', this.root.offsetHeight);
+		var scrollSize = this.getScrollbarSize();
+		
+		this.canvas.setAttribute('width', this.root.offsetWidth - scrollSize.width);
+		this.canvas.setAttribute('height', this.root.offsetHeight - scrollSize.height);
 		
 		this.draw();
 	},
@@ -329,15 +335,13 @@ Dungeon.prototype = {
 		this.intervalID = null;
 		
 		var sequence = this.populateNodes()
-			.then(function() { return this.alignNodes() }.bind(this))
-			.then(function() { return this.fitOnScreen() }.bind(this));
+			.then(this.alignNodes.bind(this))
+			.then(this.fitOnScreen.bind(this));
 		
 		// TODO: expand nodes & links to take up actual volumes
 		
 		if (!this.animated)
-			sequence = sequence.then(function () {
-				this.draw();
-			}.bind(this));
+			sequence = sequence.then(this.draw.bind(this));
 	},
 	populateNodes: function () {
 		var numNodeAddSteps = parseInt(document.getElementById('numSteps').value);
@@ -437,15 +441,23 @@ Dungeon.prototype = {
 			}.bind(this));
 	},
 	fitOnScreen: function() {
+		var edgeSpacing = 10;
+		var minX, minY, maxX, maxY;
 		return new Promise(function (resolve, reject) {
-			var minX = Number.MAX_VALUE, minY = Number.MAX_VALUE;
+			minX = Number.MAX_VALUE; minY = Number.MAX_VALUE;
+			maxX = Number.MIN_VALUE; maxY = Number.MIN_VALUE;
 			for (var i=0; i<this.nodes.length; i++) {
 					var node = this.nodes[i];
 					minX = Math.min(minX, node.pos.x);
 					minY = Math.min(minY, node.pos.y);
+					maxX = Math.max(maxX, node.pos.x);
+					maxY = Math.max(maxY, node.pos.y);
 				}
-			minX -= 10;
-			minY -= 10;
+			
+			minX -= edgeSpacing;
+			minY -= edgeSpacing;
+			maxX += edgeSpacing;
+			maxY += edgeSpacing;
 			
 			if (this.animated) {
 				var num = 0, lerpSteps = 20;
@@ -471,6 +483,16 @@ Dungeon.prototype = {
 				}
 				resolve();
 			}
+		}.bind(this))
+		.then(function() {
+			this.canvas.setAttribute('width', (maxX - minX) * this.scale);
+			this.canvas.setAttribute('height', (maxY - minY) * this.scale);
+			this.canvas.style.border = 'solid red 1px';
+			this.drawGrid = true;
+			this.draw();
+			
+			if (this.animated)
+				window.removeEventListener('resize', this.resizeListener);
 		}.bind(this));
 	},
 	addNode: function () {
@@ -567,7 +589,54 @@ Dungeon.prototype = {
 		for (var i=0; i<this.nodes.length; i++) {
 			this.nodes[i].draw(ctx, this.scale);
 		}
-	}
+		
+		if (this.drawGrid) {
+			ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+			var spacing = this.scale, width = parseInt(this.canvas.getAttribute('width')), height = parseInt(this.canvas.getAttribute('height'));
+			ctx.beginPath();
+			for (var x=0; x<width; x+=spacing) {
+				ctx.moveTo(x, 0);
+				ctx.lineTo(x, height);
+			}
+			for (var y=0; y<height; y+=spacing) {
+				ctx.moveTo(0, y);
+				ctx.lineTo(width, y);
+			}
+			ctx.stroke();
+		}
+	},
+	getScrollbarSize: function() {
+        var outer = document.createElement('div');
+        outer.style.visibility = 'hidden';
+        outer.style.width = '100px';
+        outer.style.height = '100px';
+        outer.style.msOverflowStyle = 'scrollbar'; // needed for WinJS apps
+
+        document.body.appendChild(outer);
+
+        var widthNoScroll = outer.offsetWidth;
+        var heightNoScroll = outer.offsetHeight;
+
+        // force scrollbars
+        outer.style.overflow = 'scroll';
+
+        // add innerdiv
+        var inner = document.createElement('div');
+        inner.style.width = '100%';
+        inner.style.height = '100%';
+        outer.appendChild(inner);
+
+        var widthWithScroll = inner.offsetWidth;
+        var heightWithScroll = inner.offsetHeight;
+
+        // remove divs
+        outer.parentNode.removeChild(outer);
+
+        return {
+            width: widthNoScroll - widthWithScroll,
+            height: heightNoScroll - heightWithScroll
+        }
+    }
 }
 
 var dungeon = null;

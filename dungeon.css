@@ -1,5 +1,5 @@
 #menu {
-	position: fixed;
+	position: absolute;
 	top: 0;
 	left: 0;
 	right: 0;
@@ -8,14 +8,9 @@
 }
 
 #mapRoot {
-	position: fixed;
+	position: absolute;
 	top: 2em;
 	left: 0;
 	right: 0;
 	bottom: 0;
-}
-
-#mapRoot .node {
-	position: absolute;
-	
 }
