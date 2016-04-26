@@ -104,9 +104,16 @@ Coord.prototype = {
 	}
 }
 
-function Node(parent, pos) {
+var NodeType = {
+	Room: 1,
+	Junction: 2,
+}
+
+function Node(parent, pos, weight) {
 	this.parent = parent;
 	this.pos = pos;
+	this.weight = weight === undefined ? 1 : weight;
+	this.nodeType = NodeType.Room;
 	this.radius = 1.5;
 	this.links = [];
 }
@@ -115,32 +122,19 @@ Node.prototype = {
 	constructor: Node,
 	calculateForce: function () {
 		var force = new Coord(0, 0);
-		/*
-		// treat each link like a spring. if its length is too short, push away.
-		// if its length is too long, pull apart
-		for (var i=0; i<this.links.length; i++) {
-			var link = this.links[i];
-			var scalarComponent = link.springConstant * link.getDistanceFromRest();
-			var otherNode = link.fromNode == this ? link.toNode : link.fromNode;
-			
-			var componentForce = this.pos.directionTo(otherNode.pos).scale(scalarComponent);
-			
-			force.applyOffset(componentForce);
-		}
-		*/
-		var forceCutoffDist = 8, nodeRepulsionForce = 1, linkRepulsionForce = 0.3;
+		var forceCutoffDist = 8, nodeRepulsionScale = 1, linkRepulsionForce = 0.3;
 		
 		// push away from any other node that is too close
 		for (var i=0; i<this.parent.nodes.length; i++) {
 			var otherNode = this.parent.nodes[i];
-			if (otherNode == this)
+			if (otherNode == this || otherNode.nodeType == NodeType.Junction)
 				continue;
 			
 			var dist = this.pos.distanceTo(otherNode.pos);
 			if (dist > forceCutoffDist)
 				continue;
 
-			var scalarComponent = nodeRepulsionForce / dist / dist;
+			var scalarComponent = nodeRepulsionScale * otherNode.weight / dist / dist;
 			var componentForce = this.pos.directionTo(otherNode.pos).scale(-scalarComponent);
 			
 			force.applyOffset(componentForce);
@@ -173,15 +167,17 @@ Node.prototype = {
 			force.applyOffset(componentForce);
 		}
 		
-		// prevent any enormous forces from being created
-		var forceLimit = 5;
-		if (force.length() > forceLimit) {
-			force = force.toUnitLength();
-			force.x *= forceLimit;
-			force.y *= forceLimit;
+		// prevent any enormous accelerations from being created
+		var accel = new Coord(force.x / this.weight, force.y / this.weight);
+		
+		var accelLimit = 5;
+		if (accel.length() > accelLimit) {
+			accel = accel.toUnitLength();
+			accel.x *= accelLimit;
+			accel.y *= accelLimit;
 		}
 		
-		return force;
+		return accel;
 	},
 	distanceFromLink: function (link) {
 		var A = this.pos.x - link.fromNode.pos.x;
@@ -215,6 +211,9 @@ Node.prototype = {
 		return Math.sqrt(dx * dx + dy * dy);
 	},
 	draw: function (ctx, scale) {
+		if (this.nodeType == NodeType.Junction)
+			return;
+		
 		ctx.fillStyle = '#c00';
 		
 		ctx.beginPath();
@@ -496,36 +495,52 @@ Dungeon.prototype = {
 		}.bind(this));
 	},
 	addNode: function () {
+		// these are all cumulative
 		var insertChance = parseInt(document.getElementById('chanceInsert').value);
-		var joinChance = parseInt(document.getElementById('chanceJoin').value);
-		var appendChance = parseInt(document.getElementById('chanceAppend').value);
+		var joinChance = parseInt(document.getElementById('chanceJoin').value) + insertChance;
+		var appendChance = parseInt(document.getElementById('chanceAppend').value) + joinChance;
+		var branchChance = parseInt(document.getElementById('chanceBranch').value) + appendChance;
 		
-		var random = randomInt(insertChance + joinChance + appendChance);
+		var weightVariation = parseInt(document.getElementById('weightVariation').value);
 		
-		if (random < insertChance)
-			this.insertNode();
-		else if (random < joinChance + insertChance)
+		var randomType = randomInt(branchChance);
+		var randomWeight = (25 + randomInt(weightVariation)) / 40;
+		
+		if (randomType < insertChance)
+			this.insertNode(randomWeight);
+		else if (randomType < joinChance)
 			this.joinNodes();
+		else if (randomType < appendChance)
+			this.appendNode(randomWeight);
 		else
-			this.appendNode();
+			this.branchNode(randomWeight);
 	},
-	insertNode: function () {
+	insertNode: function (weight) {
 		// randomly pick a link to interrupt with a new node
 		var link = this.links[randomInt(this.links.length)];
 		
-		var newNode = new Node(this, link.fromNode.pos.halfwayTo(link.toNode.pos));
+		var newNode = new Node(this, link.fromNode.pos.halfwayTo(link.toNode.pos), weight);
 		this.nodes.push(newNode);
 		
 		var newLink = new Link(newNode, link.toNode);
 		this.links.push(newLink);
 		
 		link.toNode = newNode;
+		return newNode;
 	},
 	joinNodes: function () {
 		// pick two nodes
 		var fromNode = this.nodes[randomInt(this.nodes.length)];
+		var possibleToNodes = [], junctions = [];
 		
-		var possibleToNodes = [];
+		for (var i=0; i<fromNode.links.length; i++) {
+			var link = fromNode.links[i];
+			if (link.fromNode.nodeType == NodeType.Junction)
+				junctions.push(link.fromNode);
+			if (link.toNode.nodeType == NodeType.Junction)
+				junctions.push(link.toNode);
+		}
+		
 		for (var i=0; i<this.nodes.length; i++) {
 			var node = this.nodes[i];
 			if (node === fromNode)
@@ -533,11 +548,20 @@ Dungeon.prototype = {
 			
 			// if already linked, don't do it twice
 			var invalid = false;
-			for (var j=0; j<fromNode.links.count; j++) {
+			for (var j=0; j<fromNode.links.length; j++) {
 				var link = fromNode.links[j];
 				if (link.toNode === node || link.fromNode === node) {
 					invalid = true;
 					break;
+				}
+				
+				// if both nodes link to the same junction node, that's also disallowed
+				for (var k=0; k<junctions.length; k++) {
+					var junction = junctions[k];
+					if (link.fromNode == junction || link.toNode == junction) {
+						invalid = true;
+						break;
+					}
 				}
 			}
 			
@@ -568,14 +592,24 @@ Dungeon.prototype = {
 		var newLink = new Link(fromNode, toNode);
 		this.links.push(newLink);
 	},
-	appendNode: function () {
+	appendNode: function (weight) {
 		// randomly pick a node to branch off of with a new node
 		var node = this.nodes[randomInt(this.nodes.length)];
 		
-		var newNode = new Node(this, node.pos.createAdjacent());
+		var newNode = new Node(this, node.pos.createAdjacent(), weight);
 		this.nodes.push(newNode);
 		
 		var newLink = new Link(node, newNode);
+		this.links.push(newLink);
+	},
+	branchNode: function (weight) {
+		var junction = this.insertNode(5);
+		junction.nodeType = NodeType.Junction;
+				
+		var newNode = new Node(this, junction.pos.createAdjacent(), weight);
+		this.nodes.push(newNode);
+		
+		var newLink = new Link(junction, newNode);
 		this.links.push(newLink);
 	},
 	draw: function () {
