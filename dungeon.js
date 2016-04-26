@@ -289,6 +289,8 @@ function Dungeon(container, animated) {
 	this.root.innerHTML = '<canvas></canvas>';
 	this.canvas = this.root.childNodes[0];
 	this.scale = 10;
+	this.drawNodeGraph = true;
+	this.drawNodeLinks = true;
 	this.drawGrid = false;
 	this.intervalID = null;
 	this.animated = animated;
@@ -335,9 +337,10 @@ Dungeon.prototype = {
 		
 		var sequence = this.populateNodes()
 			.then(this.alignNodes.bind(this))
-			.then(this.fitOnScreen.bind(this));
-		
-		// TODO: expand nodes & links to take up actual volumes
+			.then(this.fitOnScreen.bind(this))
+			.then(this.switchToGrid.bind(this))
+			.then(this.embedLinks.bind(this))
+			.then(this.growRooms.bind(this));
 		
 		if (!this.animated)
 			sequence = sequence.then(this.draw.bind(this));
@@ -484,14 +487,15 @@ Dungeon.prototype = {
 			}
 		}.bind(this))
 		.then(function() {
-			this.canvas.setAttribute('width', (maxX - minX) * this.scale);
-			this.canvas.setAttribute('height', (maxY - minY) * this.scale);
-			this.canvas.style.border = 'solid red 1px';
-			this.drawGrid = true;
-			this.draw();
+			for (var i=0; i<this.nodes.length; i++) {
+				var pos = this.nodes[i].pos;
+				pos.x = Math.round(pos.x);
+				pos.y = Math.round(pos.y);
+			}
 			
-			if (this.animated)
-				window.removeEventListener('resize', this.resizeListener);
+			this.grid = new Array(maxX - minX + 1);
+			for (var i=0; i<this.grid.length; i++)
+				this.grid[i] = new Array(maxY - minY + 1);
 		}.bind(this));
 	},
 	addNode: function () {
@@ -612,29 +616,86 @@ Dungeon.prototype = {
 		var newLink = new Link(junction, newNode);
 		this.links.push(newLink);
 	},
+	switchToGrid: function () {
+		this.canvas.setAttribute('width', this.grid.length * this.scale);
+		this.canvas.setAttribute('height', this.grid[0].length * this.scale);
+		this.canvas.style.border = 'solid red 1px';
+		this.drawGrid = true;
+		
+		// link every node to the grid cells it touches at present
+		for (var i=0; i<this.nodes.length; i++) {
+			var node = this.nodes[i];
+			
+			for (var x=node.pos.x - 1; x<=node.pos.x; x++)
+				for (var y=node.pos.y - 1; y<=node.pos.y; y++)
+					this.grid[x][y] = node;
+		}
+		
+		if (this.animated) {
+			this.draw();
+			window.removeEventListener('resize', this.resizeListener);
+			
+			// animate nodes changing from circles to squares. The squares are already drawing, so just shrink the circles
+			return new Promise(function (resolve, reject) {
+				var num = 0, animSteps = 20;
+				this.intervalID = window.setInterval(function () {
+					for (var i=0; i<this.nodes.length; i++) {
+						this.nodes[i].radius *= 0.96;
+					}					
+					
+					this.draw();
+					
+					if (++num >= animSteps) {
+						window.clearInterval(this.intervalID);
+						this.drawNodeGraph = false;
+						resolve();
+					}
+				}.bind(this), 50);
+			}.bind(this));
+		}
+		else {
+			this.drawNodeGraph = false;
+			return Promise.resolve();
+		}
+	},
+	embedLinks: function () {
+		// TODO: implement - associate each tile of the grid with all of the connections that overlap with it
+		return Promise.resolve();
+	},
+	growRooms: function () {
+		// TODO: implement - expand rooms, by 1 row/col at a time, according to their weights
+		return Promise.resolve();
+	},
 	draw: function () {
 		var ctx = this.canvas.getContext('2d');
 		ctx.clearRect(0, 0, this.root.offsetWidth, this.root.offsetHeight);
 		
-		for (var i=0; i<this.links.length; i++) {
-			this.links[i].draw(ctx, this.scale);
-		}
-		
-		for (var i=0; i<this.nodes.length; i++) {
-			this.nodes[i].draw(ctx, this.scale);
-		}
+		if (this.drawNodeLinks)
+			for (var i=0; i<this.links.length; i++)
+				this.links[i].draw(ctx, this.scale);
+
+		if (this.drawNodeGraph)
+			for (var i=0; i<this.nodes.length; i++)
+				this.nodes[i].draw(ctx, this.scale);
 		
 		if (this.drawGrid) {
+			var spacing = this.scale, width = this.grid.length, height = this.grid[0].length;
+			
+			ctx.fillStyle = '#c00';
+			for (var x=0; x<width; x++)
+				for (var y=0; y<height; y++)
+					if (this.grid[x][y] !== undefined)
+						ctx.fillRect(x * spacing, y * spacing, spacing, spacing);
+			
 			ctx.strokeStyle = 'rgba(200,200,200,0.5)';
-			var spacing = this.scale, width = parseInt(this.canvas.getAttribute('width')), height = parseInt(this.canvas.getAttribute('height'));
 			ctx.beginPath();
-			for (var x=0; x<width; x+=spacing) {
-				ctx.moveTo(x, 0);
-				ctx.lineTo(x, height);
+			for (var x=0; x<width; x++) {
+				ctx.moveTo(x * spacing, 0);
+				ctx.lineTo(x * spacing, height * spacing);
 			}
-			for (var y=0; y<height; y+=spacing) {
-				ctx.moveTo(0, y);
-				ctx.lineTo(width, y);
+			for (var y=0; y<height; y++) {
+				ctx.moveTo(0, y * spacing);
+				ctx.lineTo(width * spacing, y * spacing);
 			}
 			ctx.stroke();
 		}
