@@ -284,6 +284,31 @@ Link.prototype = {
 	}
 };
 
+function Tile(x, y) {
+	this.x = x;
+	this.y = y;
+	
+	this.node = null;
+	this.links = [];
+}
+
+Tile.prototype = {
+	constructor: Tile,
+	drawFill: function (ctx, scale) {
+		if (this.node != null)
+			ctx.fillStyle = '#c00';
+		else if (this.links.length > 0)
+			ctx.fillStyle = '#06c';
+		else
+			return;
+		
+		ctx.fillRect(this.x * scale, this.y * scale, scale, scale);		
+	},
+	drawEdges: function (ctx, scale) {
+		// to-do: don't fill in tiles, just draw the edges.
+	}
+}
+
 function Dungeon(container, animated) {
 	this.root = container;
 	this.root.innerHTML = '<canvas></canvas>';
@@ -339,7 +364,7 @@ Dungeon.prototype = {
 			.then(this.alignNodes.bind(this))
 			.then(this.fitOnScreen.bind(this))
 			.then(this.switchToGrid.bind(this))
-			.then(this.embedLinks.bind(this))
+			.then(this.joinLinksToTiles.bind(this))
 			.then(this.growRooms.bind(this));
 		
 		if (!this.animated)
@@ -622,13 +647,21 @@ Dungeon.prototype = {
 		this.canvas.style.border = 'solid red 1px';
 		this.drawGrid = true;
 		
-		// link every node to the grid cells it touches at present
+		// populate the grid with blank tiles
+		this.width = this.grid.length; this.height = this.grid[0].length;
+		for (var x=0; x<this.width; x++)
+			for (var y=0; y<this.height; y++)
+				this.grid[x][y] = new Tile(x, y);
+
+		// link up the nodes to the tiles that they touch
 		for (var i=0; i<this.nodes.length; i++) {
 			var node = this.nodes[i];
+			if (node.nodeType == NodeType.Junction)
+				continue;
 			
 			for (var x=node.pos.x - 1; x<=node.pos.x; x++)
 				for (var y=node.pos.y - 1; y<=node.pos.y; y++)
-					this.grid[x][y] = node;
+					this.grid[x][y].node = node;
 		}
 		
 		if (this.animated) {
@@ -658,9 +691,79 @@ Dungeon.prototype = {
 			return Promise.resolve();
 		}
 	},
-	embedLinks: function () {
-		// TODO: implement - associate each tile of the grid with all of the connections that overlap with it
-		return Promise.resolve();
+	joinLinksToTiles: function () {
+		// associate each tile of the grid with all of the links that overlap or touch it
+		// this is Xiaolin Wi's algorithm, without the antialiasing.
+		for (var i=0; i<this.links.length; i++) {
+			var link = this.links[i];
+			var x0 = link.fromNode.pos.x, x1 = link.toNode.pos.x;
+			var y0 = link.fromNode.pos.y, y1 = link.toNode.pos.y;
+			
+			this.grid[x0][y0].links.push(link);
+			this.grid[x0 - 1][y0].links.push(link);
+			this.grid[x0][y0 - 1].links.push(link);
+			this.grid[x0 - 1][y0 - 1].links.push(link);
+			
+			this.grid[x1][y1].links.push(link);
+			this.grid[x1 - 1][y1].links.push(link);
+			this.grid[x1][y1 - 1].links.push(link);
+			this.grid[x1 - 1][y1 - 1].links.push(link);
+			
+			var steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
+			if (steep) { // swap x & y, ensure not steep
+				var tmp = y0;
+				y0 = x0;
+				x0 = tmp;
+				
+				tmp = y1;
+				y1 = x1;
+				x1 = tmp;
+			}
+			if (x0 > x1) { // swap 0 & 1, ensure moving rightwards
+				tmp = x1;
+				x1 = x0;
+				x0 = tmp;
+				
+				tmp = y1;
+				y1 = y0;
+				y0 = tmp;
+			}
+			
+			var gradient = (y1 - y0) / (x1 - x0);
+			var y = y0 + gradient * 0.5; // move to the "middle" of the cell
+			
+			for (var x = x0; x < x1; x++) {
+				var iY = Math.round(y - 0.5); // round to the nearest i+0.5, then truncate to int
+				var closestSideStep = iY + 0.5 > y ? -1 : 1;
+				var almostInteger = Math.abs(y - iY) < 0.10;
+				
+				if (steep) {
+					this.grid[iY + closestSideStep][x].links.push(link);
+					this.grid[iY][x].links.push(link);
+					if (!almostInteger)
+						this.grid[iY - closestSideStep][x].links.push(link);
+				}
+				else {
+					this.grid[x][iY + closestSideStep].links.push(link);
+					this.grid[x][iY].links.push(link);
+					if (!almostInteger)
+						this.grid[x][iY - closestSideStep].links.push(link);
+				}
+				
+				y += gradient;
+			}
+		}
+		
+		if (this.animated) {
+			return new Promise(function (resolve, reject) {
+				this.draw();
+				this.intervalID = window.setTimeout(function () {
+					resolve();
+				}.bind(this), 1000);
+			}.bind(this));
+		}
+		else
+			return Promise.resolve();
 	},
 	growRooms: function () {
 		// TODO: implement - expand rooms, by 1 row/col at a time, according to their weights
@@ -669,6 +772,12 @@ Dungeon.prototype = {
 	draw: function () {
 		var ctx = this.canvas.getContext('2d');
 		ctx.clearRect(0, 0, this.root.offsetWidth, this.root.offsetHeight);
+		
+		if (this.drawGrid) {
+			for (var x=0; x<this.width; x++)
+				for (var y=0; y<this.height; y++)
+					this.grid[x][y].drawFill(ctx, this.scale);
+		}
 		
 		if (this.drawNodeLinks)
 			for (var i=0; i<this.links.length; i++)
@@ -679,23 +788,15 @@ Dungeon.prototype = {
 				this.nodes[i].draw(ctx, this.scale);
 		
 		if (this.drawGrid) {
-			var spacing = this.scale, width = this.grid.length, height = this.grid[0].length;
-			
-			ctx.fillStyle = '#c00';
-			for (var x=0; x<width; x++)
-				for (var y=0; y<height; y++)
-					if (this.grid[x][y] !== undefined)
-						ctx.fillRect(x * spacing, y * spacing, spacing, spacing);
-			
 			ctx.strokeStyle = 'rgba(200,200,200,0.5)';
 			ctx.beginPath();
-			for (var x=0; x<width; x++) {
-				ctx.moveTo(x * spacing, 0);
-				ctx.lineTo(x * spacing, height * spacing);
+			for (var x=0; x<this.width; x++) {
+				ctx.moveTo(x * this.scale, 0);
+				ctx.lineTo(x * this.scale, this.height * this.scale);
 			}
-			for (var y=0; y<height; y++) {
-				ctx.moveTo(0, y * spacing);
-				ctx.lineTo(width * spacing, y * spacing);
+			for (var y=0; y<this.height; y++) {
+				ctx.moveTo(0, y * this.scale);
+				ctx.lineTo(this.width * this.scale, y * this.scale);
 			}
 			ctx.stroke();
 		}
