@@ -4,13 +4,15 @@ import { Node, NodeType } from './Node';
 import { Tile } from './Tile';
 import { lerp, randomInt } from './Calc';
 
+interface IRenderInfo {
+	ctx: CanvasRenderingContext2D;
+	width: number;
+	height: number;
+}
+
 export class Dungeon {
-    constructor(container: HTMLElement, readonly animated: boolean) {
-        this.root = container;
-        this.root.innerHTML = '<canvas></canvas>';
-        this.canvas = this.root.childNodes[0] as HTMLCanvasElement;
+    constructor(readonly animated: boolean, readonly getRenderInfo: () => IRenderInfo) {
         this.intervalID = null;
-        this.animated = animated;
             
         let node1 = new Node(this, new Coord(20, 20));
         let node2 = new Node(this, new Coord(20, 30));
@@ -23,19 +25,10 @@ export class Dungeon {
         
         this.links = [link1, link2];
         
-        if (this.animated) {
-            this.resizeListener = () => this.updateSize();
-            window.addEventListener('resize', this.resizeListener);
-        
-            this.updateSize();
-        }
         this.generate();
     }
 
-    root: HTMLElement;
-    canvas: HTMLCanvasElement;
-
-    nodes: Node[];
+	nodes: Node[];
     links: Link[];
     scale = 10;
     drawNodeGraph = true;
@@ -47,25 +40,12 @@ export class Dungeon {
     grid: Tile[][];
 
     intervalID: number | null;
-    resizeListener: () => void;
 
 	destroy() {
-		if (this.animated)
-			window.removeEventListener('resize', this.resizeListener);
-		
 		if (this.intervalID !== null)
 			window.clearInterval(this.intervalID);
     }
-    
-	updateSize() {
-		let scrollSize = this.getScrollbarSize();
-		
-		this.canvas.setAttribute('width', (this.root.offsetWidth - scrollSize.width).toString());
-		this.canvas.setAttribute('height', (this.root.offsetHeight - scrollSize.height).toString());
-		
-		this.draw();
-    }
-    
+
 	generate() {
 		this.intervalID = null;
 		
@@ -77,7 +57,7 @@ export class Dungeon {
 			.then(this.growRooms.bind(this));
 		
 		if (!this.animated)
-			sequence = sequence.then(this.draw.bind(this));
+			sequence = sequence.then(this.redraw.bind(this));
     }
     
 	populateNodes() {
@@ -86,7 +66,7 @@ export class Dungeon {
 		let addNodeStep = () => {
 			this.addNode();
 			if (this.animated)
-				this.draw();
+				this.redraw();
 			
 			return this.settleNodes(20, true);
 		};
@@ -110,7 +90,7 @@ export class Dungeon {
 				let num = 0;
 				this.intervalID = window.setInterval(() => {
 					let finishEarly = this.repositionNodes() <= settledStepSizeLimit;
-					this.draw();
+					this.redraw();
 					
 					if ((canFinishEarly && finishEarly) || ++num >= settleSteps) {
                         if (this.intervalID !== null) {
@@ -164,7 +144,7 @@ export class Dungeon {
 						node.pos.x = lerp(node.pos.x, Math.round(node.pos.x), fraction);
 						node.pos.y = lerp(node.pos.y, Math.round(node.pos.y), fraction);
 					}
-					this.draw();
+					this.redraw();
 					
 					if (num >= lerpSteps) {
                         if (this.intervalID !== null) {
@@ -212,7 +192,7 @@ export class Dungeon {
 						let node = this.nodes[i];
 						node.pos.x += stepX;
 						node.pos.y += stepY;
-						this.draw();
+						this.redraw();
 					}
 					if (++num >= lerpSteps) {
                         if (this.intervalID !== null) {
@@ -368,9 +348,9 @@ export class Dungeon {
     }
     
 	switchToGrid() {
-		this.canvas.setAttribute('width', (this.grid.length * this.scale).toString());
-		this.canvas.setAttribute('height', (this.grid[0].length * this.scale).toString());
-		this.canvas.style.border = 'solid red 1px';
+		//this.canvas.setAttribute('width', (this.grid.length * this.scale).toString());
+		//this.canvas.setAttribute('height', (this.grid[0].length * this.scale).toString());
+		//this.canvas.style.border = 'solid red 1px';
 		this.drawGrid = true;
 		
 		// populate the grid with blank tiles
@@ -391,8 +371,7 @@ export class Dungeon {
 		}
 		
 		if (this.animated) {
-			this.draw();
-			window.removeEventListener('resize', this.resizeListener);
+			this.redraw();
 			
 			// animate nodes changing from circles to squares. The squares are already drawing, so just shrink the circles
 			return new Promise((resolve, reject) => {
@@ -402,7 +381,7 @@ export class Dungeon {
 						this.nodes[i].radius *= 0.96;
 					}					
 					
-					this.draw();
+					this.redraw();
 					
 					if (++num >= animSteps) {
                         if (this.intervalID !== null) {
@@ -485,7 +464,7 @@ export class Dungeon {
 		
 		if (this.animated) {
 			return new Promise((resolve, reject) => {
-				this.draw();
+				this.redraw();
 				this.intervalID = window.setTimeout(() => {
 					resolve();
 				}, 1000);
@@ -499,14 +478,15 @@ export class Dungeon {
 		// TODO: implement - expand rooms, by 1 row/col at a time, according to their weights
 		return Promise.resolve();
     }
-    
-	draw() {
-        let ctx = this.canvas.getContext('2d');
-        if (ctx === null) {
-            return;
-        }
+	
+	redraw() {
+		let info = this.getRenderInfo();
+		// TODO: requestAnimationFrame?
+		this.draw(info.ctx, info.width, info.height);
+	}
 
-		ctx.clearRect(0, 0, this.root.offsetWidth, this.root.offsetHeight);
+	draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
+		ctx.clearRect(0, 0, width, height);
 		
 		if (this.drawGrid) {
 			for (let x=0; x<this.width; x++)
@@ -535,38 +515,5 @@ export class Dungeon {
 			}
 			ctx.stroke();
 		}
-    }
-    
-	getScrollbarSize() {
-        let outer = document.createElement('div');
-        outer.style.visibility = 'hidden';
-        outer.style.width = '100px';
-        outer.style.height = '100px';
-        outer.style.msOverflowStyle = 'scrollbar'; // needed for WinJS apps
-
-        document.body.appendChild(outer);
-
-        let widthNoScroll = outer.offsetWidth;
-        let heightNoScroll = outer.offsetHeight;
-
-        // force scrollbars
-        outer.style.overflow = 'scroll';
-
-        // add innerdiv
-        let inner = document.createElement('div');
-        inner.style.width = '100%';
-        inner.style.height = '100%';
-        outer.appendChild(inner);
-
-        let widthWithScroll = inner.offsetWidth;
-        let heightWithScroll = inner.offsetHeight;
-
-        // remove divs
-        (outer.parentNode as HTMLElement).removeChild(outer);
-
-        return {
-            width: widthNoScroll - widthWithScroll,
-            height: heightNoScroll - heightWithScroll
-        }
     }
 }

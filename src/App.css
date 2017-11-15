@@ -24,7 +24,7 @@
 	background-color: lightgray;
 }
 
-#mapRoot {
+.dungeonDisplay {
 	position: absolute;
 	top: 2em;
 	left: 0;

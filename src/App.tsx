@@ -1,8 +1,21 @@
 import * as React from 'react';
 import { Dungeon } from './Dungeon';
+import { DungeonDisplay } from './DungeonDisplay';
 import './App.css';
 
-class App extends React.Component {
+interface State {
+  dungeon?: Dungeon;
+}
+
+class App extends React.Component<{}, State> {
+  constructor(props: {}) {
+    super(props);
+
+    this.state = {};
+  }
+
+  display: DungeonDisplay;
+
   render() {
     return (
       <div className="App">
@@ -31,22 +44,30 @@ class App extends React.Component {
             <label>Room variation
               <input type="range" id="weightVariation" value="40" min="0" max="100" />
             </label>
-            <input type="button" onClick={() => createDungeon(true)} value="Generate slowly" />
-            <input type="button" onClick={() => createDungeon(false)} value="Generate quickly" />
+            <input type="button" onClick={() => this.createDungeon(true)} value="Generate slowly" />
+            <input type="button" onClick={() => this.createDungeon(false)} value="Generate quickly" />
           </div>
         </div>
-        <div id="mapRoot"></div>
+        <DungeonDisplay dungeon={this.state.dungeon} ref={d => this.display = d === null ? this.display : d} />
       </div>
     );
   }
-}
 
-var dungeon: Dungeon | null = null;
-function createDungeon(animated: boolean) {
-	if (dungeon != null)
-		dungeon.destroy();
-		
-	dungeon = new Dungeon(document.getElementById('mapRoot') as HTMLElement, animated);
+  private createDungeon(animate: boolean) {
+    if (this.state.dungeon !== undefined) {
+      this.state.dungeon.destroy();
+    }
+    
+    let getInfo = () => { return {
+      ctx: this.display.ctx,
+      width: this.display.state.width,
+      height: this.display.state.height,
+    }};
+
+    this.setState({
+      dungeon: new Dungeon(animate, getInfo),
+    });
+  }
 }
 
 export default App;
