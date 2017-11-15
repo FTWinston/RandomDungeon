@@ -1,6 +1,6 @@
 import * as React from 'react';
+import { Canvas } from './generic/Canvas';
 import { Dungeon } from './Dungeon';
-import { DungeonDisplay } from './DungeonDisplay';
 import './App.css';
 
 interface State {
@@ -14,7 +14,7 @@ class App extends React.Component<{}, State> {
     this.state = {};
   }
 
-  display: DungeonDisplay;
+  display: Canvas;
 
   render() {
     return (
@@ -48,7 +48,7 @@ class App extends React.Component<{}, State> {
             <input type="button" onClick={() => this.createDungeon(false)} value="Generate quickly" />
           </div>
         </div>
-        <DungeonDisplay dungeon={this.state.dungeon} ref={d => this.display = d === null ? this.display : d} />
+        <Canvas ref={d => this.display = d === null ? this.display : d} />
       </div>
     );
   }

@@ -3,6 +3,7 @@ import { Link } from './Link';
 import { Node, NodeType } from './Node';
 import { Tile } from './Tile';
 import { lerp, randomInt } from './Calc';
+import { Graph } from './generic/Graph';
 
 interface IRenderInfo {
 	ctx: CanvasRenderingContext2D;
@@ -10,26 +11,13 @@ interface IRenderInfo {
 	height: number;
 }
 
-export class Dungeon {
+export class Dungeon extends Graph<Node, Link> {
     constructor(readonly animated: boolean, readonly getRenderInfo: () => IRenderInfo) {
+		super();
         this.intervalID = null;
-            
-        let node1 = new Node(this, new Coord(20, 20));
-        let node2 = new Node(this, new Coord(20, 30));
-        let node3 = new Node(this, new Coord(30, 20));
-        
-        this.nodes = [node1, node2, node3];
-        
-        let link1 = new Link(node1, node2);
-        let link2 = new Link(node1, node3);
-        
-        this.links = [link1, link2];
-        
         this.generate();
     }
 
-	nodes: Node[];
-    links: Link[];
     scale = 10;
     drawNodeGraph = true;
     drawNodeLinks = true;
@@ -41,6 +29,10 @@ export class Dungeon {
 
     intervalID: number | null;
 
+	distance(node1: Node, node2: Node) {
+		return Math.sqrt(node1.pos.x - node2.pos.x + node1.pos.y - node2.pos.y);
+	}
+
 	destroy() {
 		if (this.intervalID !== null)
 			window.clearInterval(this.intervalID);
@@ -50,6 +42,12 @@ export class Dungeon {
 		this.intervalID = null;
 		
 		let sequence = this.populateNodes()
+			.then(() => this.computeDelauneyTriangulation())
+			.then(() => this.computeGabrielGraph())
+			.then(() => this.computeRelativeNeighbourhoodGraph())
+			.then(() => this.computeMinimumSpanningTree())
+			.then(() => this.reduceToLinearityValue())
+			
 			.then(this.alignNodes.bind(this))
 			.then(this.fitOnScreen.bind(this))
 			.then(this.switchToGrid.bind(this))
@@ -61,27 +59,28 @@ export class Dungeon {
     }
     
 	populateNodes() {
-		let numNodeAddSteps = parseInt((document.getElementById('numSteps') as HTMLInputElement).value);
-		
-		let addNodeStep = () => {
-			this.addNode();
-			if (this.animated)
-				this.redraw();
-			
-			return this.settleNodes(20, true);
-		};
-		
-		let sequence = this.settleNodes(10, this.animated);
-		for (let i=0; i<numNodeAddSteps; i++) 
-			sequence = sequence.then(addNodeStep);
-		
-		sequence = sequence.then(() => {
-			return this.settleNodes(100, true);
-		});
-		
-		return sequence;
-    }
-    
+		// create nodes until there are numNodes. Use same seeded PRNG each time so that the same ones are created when the number increases/decreases
+		let numNodes = 25; // TODO: this should be UI-driven
+
+		if (this.nodes.length > numNodes) {
+			this.nodes.splice(numNodes);
+		}
+		else {
+			for (let i=this.nodes.length; i<numNodes; i++) {
+				let x = Math.random() * this.width;
+				let y = Math.random() * this.height;
+				let node = new Node(this, new Coord(x, y), 1);
+				this.nodes.push(node);
+			}
+		}
+
+		return Promise.resolve();
+	}
+	
+	private reduceToLinearityValue() {
+		return Promise.resolve();
+	}
+
 	settleNodes(settleSteps: number, canFinishEarly: boolean) {
 		let settledStepSizeLimit = 0.01;
 		

@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { Dungeon } from './Dungeon';
 
 interface Props {
-    dungeon?: Dungeon;
     redraw?: () => void;
 }
 
@@ -11,7 +9,7 @@ interface State {
     height: number;
 }
 
-export class DungeonDisplay extends React.Component<Props, State> {
+export class Canvas extends React.Component<Props, State> {
     private root: HTMLDivElement;
     private canvas: HTMLCanvasElement;
     public ctx: CanvasRenderingContext2D;
