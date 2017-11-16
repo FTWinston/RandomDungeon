@@ -1,9 +1,5 @@
 import { Coord } from './Coord';
 
-export function randomInt(length: number) {
-	return Math.floor(Math.random() * length);
-}
-
 export function lerp(val1: number, val2: number, fraction: number) {
   return (1-fraction)*val1 + fraction*val2;
 }

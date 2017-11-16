@@ -92,8 +92,6 @@ class App extends React.Component<{}, State> {
       regenerate = true;
     }
 
-    dungeon.ctx = this.canvas.ctx;
-
     if (regenerate) {
       dungeon.generate();
     }

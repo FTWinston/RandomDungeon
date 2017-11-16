@@ -1,3 +1,4 @@
+import { SRandom } from './generic/SRandom';
 import { Coord } from './generic/Coord';
 import { Link } from './Link';
 import { Node/*, NodeType*/ } from './Node';
@@ -8,9 +9,11 @@ import { Graph } from './generic/Graph';
 export class Dungeon extends Graph<Node, Link> {
     constructor(readonly animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number, public width: number, public height: number, public scale: number) {
 		super();
+		this.seed = Math.random();
 		this.generate();
     }
 
+	seed: number;
     drawNodeGraph = true;
     drawNodeLinks = true;
     drawGrid = false;
@@ -23,14 +26,18 @@ export class Dungeon extends Graph<Node, Link> {
 	}
 
 	destroy() {
-		if (this.intervalID !== null)
+		if (this.intervalID !== null) {
 			window.clearInterval(this.intervalID);
+		}
     }
 
 	generate() {
 		this.intervalID = null;
+		
+		let seedGenerator = new SRandom(this.seed);
 
-		this.populateNodes();
+		let nodeSeed = seedGenerator.next();
+		this.populateNodes(nodeSeed);
 
 		this.redraw();
 /*
@@ -52,12 +59,14 @@ export class Dungeon extends Graph<Node, Link> {
 */
 	}
 	
-	populateNodes() {
+	private populateNodes(seed: number) {
 		// create nodes until there are nodeCount. Use same seeded PRNG each time so that the same ones are created when the number increases/decreases.
+		let random = new SRandom(seed);
+
 		this.nodes = [];
 		for (let i=0; i<this.nodeCount; i++) {
-			let x = Math.random() * (this.width - 2) + 1;
-			let y = Math.random() * (this.height - 2) + 1;
+			let x = random.nextInRange(1, this.width - 1);
+			let y = random.nextInRange(1, this.height - 1);
 			let node = new Node(this, new Coord(x, y), 1);
 			this.nodes.push(node);
 		}

@@ -1,5 +1,3 @@
-import { randomInt } from './Calc';
-
 export class Coord {
 	constructor(public x: number, public y: number) {
 
@@ -40,45 +38,6 @@ export class Coord {
 
 	halfwayTo(other: Coord) {
 		return new Coord((this.x + other.x) / 2, (this.y + other.y) / 2);
-	}
-
-	createAdjacent() {
-		let pick = randomInt(8);
-		let dx: number, dy: number;
-		
-		switch (pick) {
-			case 0:
-			case 3:
-			case 5:
-				dx = -2; break;
-			case 1:
-			case 6:
-				dx = 0; break;
-			case 2:
-			case 4:
-			case 7:
-				dx = 2; break;
-			default:
-				dx = 0; break;
-		}
-		
-		switch (pick) {
-			case 0:
-			case 1:
-			case 2:
-				dy = -2; break;
-			case 3:
-			case 4:
-				dy = 0; break;
-			case 5:
-			case 6:
-			case 7:
-				dy = 2; break;
-			default:
-				dy = 0; break;
-		}
-		
-		return new Coord(this.x + dx, this.y + dy);
 	}
 
 	applyOffset(other: Coord) {
