@@ -79,12 +79,49 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
 
         let links: TLine[] = [];
 
-        // TODO: convert triangles to UNIQUE lines
+        // convert triangles to UNIQUE lines
         for (let triangle of triangulation) {
-            let v0 = triangle.vertices[0], v1 = triangle.vertices[1], v2 = triangle.vertices[2];
-            links.push(createLine(v0, v1), createLine(v1, v2), createLine(v2, v0))
-        }
+            let v0 = triangle.vertices[0], v1 = triangle.vertices[1], v2 = triangle.vertices[2];            
 
+            let firstDuplicate = false, secondDuplicate = false, thirdDuplicate = false;
+            for (let link of links) {
+                if (link.from === v0) {
+                    if (link.to === v1) {
+                        firstDuplicate = true;
+                    }
+                    else if (link.to === v2) {
+                        thirdDuplicate = true;
+                    }
+                }
+                else if (link.from === v1) {
+                    if (link.to === v0) {
+                        firstDuplicate = true;
+                    }
+                    else if (link.to === v2) {
+                        secondDuplicate = true;
+                    }
+                }
+                else if (link.from === v2) {
+                    if (link.to === v0) {
+                        thirdDuplicate = true;
+                    }
+                    else if (link.to === v1) {
+                        secondDuplicate = true;
+                    }
+                }
+            }
+
+            if (!firstDuplicate) {
+                links.push(createLine(v0, v1));
+            }
+            if (!secondDuplicate) {
+                links.push(createLine(v1, v2));
+            }
+            if (!thirdDuplicate) {
+                links.push(createLine(v2, v0));
+            }
+        }
+        
         return links;
     }
 
