@@ -13,6 +13,10 @@ export class Dungeon extends Graph<Node, Link> {
     }
 
 	seed: number;
+	gabrielLines: Link[];
+	relativeNeighbourhoodLines: Link[];
+	minimumSpanningLines: Link[];
+
     drawNodeGraph = true;
     drawNodeLinks = true;
     drawGrid = false;
@@ -39,6 +43,9 @@ export class Dungeon extends Graph<Node, Link> {
 		let node3 = new Node(this, 0, 999999);
 
 		this.lines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
+		this.gabrielLines = this.computeGabrielGraph(this.lines);
+		this.relativeNeighbourhoodLines = this.computeRelativeNeighbourhoodGraph(this.gabrielLines);
+		this.minimumSpanningLines = this.computeMinimumSpanningTree(this.relativeNeighbourhoodLines);
 
 		this.redraw();
 /*
@@ -492,8 +499,30 @@ export class Dungeon extends Graph<Node, Link> {
 		}
 		
 		if (this.drawNodeLinks) {
-			for (let i=0; i<this.lines.length; i++) {
-				this.lines[i].draw(ctx, this.scale);
+			ctx.strokeStyle = '#000';
+			for (let line of this.minimumSpanningLines) {
+				line.draw(ctx, this.scale);
+			}
+
+			ctx.strokeStyle = '#F00';
+			for (let line of this.relativeNeighbourhoodLines) {
+				if (this.minimumSpanningLines.indexOf(line) === -1) {
+					line.draw(ctx, this.scale);
+				}
+			}
+
+			ctx.strokeStyle = '#0CF';
+			for (let line of this.gabrielLines) {
+				if (this.relativeNeighbourhoodLines.indexOf(line) === -1) {
+					line.draw(ctx, this.scale);
+				}
+			}
+
+			ctx.strokeStyle = '#eee';
+			for (let line of this.lines) {
+				if (this.gabrielLines.indexOf(line) === -1) {
+					line.draw(ctx, this.scale);
+				}
 			}
 		}
 

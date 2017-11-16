@@ -61,8 +61,6 @@ export class Link extends Line<Node> {
     }
     
 	draw(ctx: CanvasRenderingContext2D, scale: number) {
-		ctx.strokeStyle = '#000';
-		
 		ctx.beginPath();
 		ctx.moveTo(this.from.x * scale, this.from.y * scale);
 		ctx.lineTo(this.to.x * scale, this.to.y * scale);

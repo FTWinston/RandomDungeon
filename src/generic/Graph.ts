@@ -18,6 +18,10 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
     lines: TLine[] = [];
 
     computeDelauneyTriangulation(superTriangle: [TNode, TNode, TNode], createLine: (from: TNode, to: TNode) => TLine) {
+        if (this.nodes.length == 2) {
+            return [createLine(this.nodes[0], this.nodes[1])];
+        }
+
         // https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
         let triangulation: Triangle<TNode>[] = [];
         triangulation.push(new Triangle(superTriangle));
@@ -121,7 +125,7 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
                 links.push(createLine(v2, v0));
             }
         }
-        
+
         return links;
     }
 
@@ -130,32 +134,109 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
         return distSq <= triangle.circumRadiusSq;
     }
 
-    computeGabrielGraph(links: TLine[]) {
-        links = (links === undefined ? this.lines : links).slice();
+    computeGabrielGraph(links: TLine[] | undefined = undefined) {
+        links = links === undefined ? this.lines : links;
 
         let graphLinks: TLine[] = [];
 
-        // TODO: compute
+        for (let link of links) {
+            let anyBlocking = false;
+            let center = link.from.halfwayTo(link.to);
+            let radiusSq = link.from.distanceSqTo(center);
+
+            for (let node of this.nodes) {
+                if (node === link.from || node === link.to) {
+                    continue;
+                }
+
+                if (node.distanceSqTo(center) < radiusSq) {
+                    anyBlocking = true;
+                    break;
+                }
+            }
+
+            if (!anyBlocking) {
+                graphLinks.push(link);
+            }
+        }
 
         return graphLinks;
     }
 
-    computeRelativeNeighbourhoodGraph(links: TLine[]) {
-        links = (links === undefined ? this.lines : links).slice();
+    computeRelativeNeighbourhoodGraph(links: TLine[] | undefined = undefined) {
+        links = links === undefined ? this.lines : links;
 
         let graphLinks: TLine[] = [];
+        
+        for (let link of links) {
+            let anyBlocking = false;
+            let lengthSq = link.from.distanceSqTo(link.to);
 
-        // TODO: compute
+            for (let node of this.nodes) {
+                if (node === link.from || node === link.to) {
+                    continue;
+                }
+
+                if (node.distanceSqTo(link.from) < lengthSq && node.distanceSqTo(link.to) < lengthSq) {
+                    anyBlocking = true;
+                    break;
+                }
+            }
+
+            if (!anyBlocking) {
+                graphLinks.push(link);
+            }
+        }
 
         return graphLinks;
     }
 
-    computeMinimumSpanningTree(links: TLine[]) {
-        links = (links === undefined ? this.lines : links).slice();
+    computeMinimumSpanningTree(links: TLine[] | undefined = undefined) {
+        let unvisitedNodes = this.nodes.slice();
+        let firstNode = unvisitedNodes.pop();
+        if (firstNode === undefined) {
+            return [];
+        }
+        
+        links = links === undefined ? this.lines : links;
+        let possibleLinks = links.map(l => { return { link: l, lengthSq: l.from.distanceSqTo(l.to) }});
+        possibleLinks.sort((a, b) => a.lengthSq - b.lengthSq);
 
+        let visitedNodes: TNode[] = [firstNode];
         let graphLinks: TLine[] = [];
 
-        // TODO: compute
+        while (unvisitedNodes.length > 0 && possibleLinks.length > 0) {
+            // find the first link that connects to a node in visitedNodes. The links are sorted by length, so the first one will be the shortest one.
+            for (let i=0; i<possibleLinks.length; i++) {
+                let testLink = possibleLinks[i].link;
+                
+                let alreadyHasFrom = visitedNodes.indexOf(testLink.from) !== -1;
+                let alreadyHasTo = visitedNodes.indexOf(testLink.to) !== -1;
+
+                // if it doesn't connect to the graph at all, discard it
+                if (!alreadyHasFrom && !alreadyHasTo) {
+                    continue;
+                }
+
+                possibleLinks.splice(i, 1);
+                graphLinks.push(testLink);
+
+                let addingNode = alreadyHasFrom ? testLink.to : testLink.from;
+                
+                // remove all other links from possibleLinks that connect addingNode to visitedNodes
+                for (let j=i; j<possibleLinks.length; j++) {
+                    testLink = possibleLinks[j].link;
+                    if ((testLink.from === addingNode && visitedNodes.indexOf(testLink.to) !== -1)
+                    || (testLink.to === addingNode && visitedNodes.indexOf(testLink.from) !== -1)) {
+                        possibleLinks.splice(j, 1);
+                        j--;
+                    }
+                }
+
+                visitedNodes.push(addingNode);
+                break;
+            }
+        }
 
         return graphLinks;
     }
