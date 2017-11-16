@@ -1,5 +1,4 @@
 import { SRandom } from './generic/SRandom';
-import { Coord } from './generic/Coord';
 import { Link } from './Link';
 import { Node/*, NodeType*/ } from './Node';
 import { Tile } from './Tile';
@@ -21,10 +20,6 @@ export class Dungeon extends Graph<Node, Link> {
     grid: Tile[][];
     intervalID: number | null;
 
-	distance(node1: Node, node2: Node) {
-		return Math.sqrt(node1.pos.x - node2.pos.x + node1.pos.y - node2.pos.y);
-	}
-
 	destroy() {
 		if (this.intervalID !== null) {
 			window.clearInterval(this.intervalID);
@@ -38,6 +33,12 @@ export class Dungeon extends Graph<Node, Link> {
 
 		let nodeSeed = seedGenerator.next();
 		this.populateNodes(nodeSeed);
+
+		let node1 = new Node(this, 0, 0);
+		let node2 = new Node(this, 999999, 0);
+		let node3 = new Node(this, 0, 999999);
+
+		this.lines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
 
 		this.redraw();
 /*
@@ -67,7 +68,7 @@ export class Dungeon extends Graph<Node, Link> {
 		for (let i=0; i<this.nodeCount; i++) {
 			let x = random.nextInRange(1, this.width - 1);
 			let y = random.nextInRange(1, this.height - 1);
-			let node = new Node(this, new Coord(x, y), 1);
+			let node = new Node(this, x, y, 1);
 			this.nodes.push(node);
 		}
 	}
@@ -135,8 +136,8 @@ export class Dungeon extends Graph<Node, Link> {
 					let fraction = num / lerpSteps;
 					for (let i=0; i<this.nodes.length; i++) {
 						let node = this.nodes[i];
-						node.pos.x = lerp(node.pos.x, Math.round(node.pos.x), fraction);
-						node.pos.y = lerp(node.pos.y, Math.round(node.pos.y), fraction);
+						node.x = lerp(node.x, Math.round(node.x), fraction);
+						node.y = lerp(node.y, Math.round(node.y), fraction);
 					}
 					this.redraw();
 					
@@ -152,8 +153,8 @@ export class Dungeon extends Graph<Node, Link> {
 			return new Promise((resolve, reject) => {
 				for (let i=0; i<this.nodes.length; i++) {
 					let node = this.nodes[i];
-					node.pos.x = Math.round(node.pos.x);
-					node.pos.y = Math.round(node.pos.y);
+					node.x = Math.round(node.x);
+					node.y = Math.round(node.y);
 				}
 				resolve();
 			});
@@ -167,10 +168,10 @@ export class Dungeon extends Graph<Node, Link> {
 			maxX = Number.MIN_VALUE; maxY = Number.MIN_VALUE;
 			for (let i=0; i<this.nodes.length; i++) {
 					let node = this.nodes[i];
-					minX = Math.min(minX, node.pos.x);
-					minY = Math.min(minY, node.pos.y);
-					maxX = Math.max(maxX, node.pos.x);
-					maxY = Math.max(maxY, node.pos.y);
+					minX = Math.min(minX, node.x);
+					minY = Math.min(minY, node.y);
+					maxX = Math.max(maxX, node.x);
+					maxY = Math.max(maxY, node.y);
 				}
 			
 			minX -= edgeSpacing;
@@ -184,8 +185,8 @@ export class Dungeon extends Graph<Node, Link> {
 				this.intervalID = window.setInterval(() => {
 					for (let i=0; i<this.nodes.length; i++) {
 						let node = this.nodes[i];
-						node.pos.x += stepX;
-						node.pos.y += stepY;
+						node.x += stepX;
+						node.y += stepY;
 						this.redraw();
 					}
 					if (++num >= lerpSteps) {
@@ -199,8 +200,8 @@ export class Dungeon extends Graph<Node, Link> {
 			else {
 				for (let i=0; i<this.nodes.length; i++) {
 					let node = this.nodes[i];
-					node.pos.x -= minX;
-					node.pos.y -= minY;
+					node.x -= minX;
+					node.y -= minY;
 				}
 				resolve();
 			}
@@ -359,8 +360,8 @@ export class Dungeon extends Graph<Node, Link> {
 			if (node.nodeType == NodeType.Junction)
 				continue;
 			
-			for (let x=node.pos.x - 1; x<=node.pos.x; x++)
-				for (let y=node.pos.y - 1; y<=node.pos.y; y++)
+			for (let x=node.x - 1; x<=node.x; x++)
+				for (let y=node.y - 1; y<=node.y; y++)
 					this.grid[x][y].node = node;
 		}
 		
@@ -398,8 +399,8 @@ export class Dungeon extends Graph<Node, Link> {
 		// this is Xiaolin Wi's algorithm, without the antialiasing.
 		for (let i=0; i<this.links.length; i++) {
 			let link = this.links[i];
-			let x0 = link.fromNode.pos.x, x1 = link.toNode.pos.x;
-			let y0 = link.fromNode.pos.y, y1 = link.toNode.pos.y;
+			let x0 = link.fromNode.x, x1 = link.toNode.x;
+			let y0 = link.fromNode.y, y1 = link.toNode.y;
 			
 			this.grid[x0][y0].links.push(link);
 			this.grid[x0 - 1][y0].links.push(link);
@@ -483,18 +484,24 @@ export class Dungeon extends Graph<Node, Link> {
 		ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
 		
 		if (this.drawGrid) {
-			for (let x=0; x<this.width; x++)
-				for (let y=0; y<this.height; y++)
+			for (let x=0; x<this.width; x++) {
+				for (let y=0; y<this.height; y++) {
 					this.grid[x][y].drawFill(ctx, this.scale);
+				}
+			}
 		}
 		
-		if (this.drawNodeLinks)
-			for (let i=0; i<this.links.length; i++)
-				this.links[i].draw(ctx, this.scale);
+		if (this.drawNodeLinks) {
+			for (let i=0; i<this.lines.length; i++) {
+				this.lines[i].draw(ctx, this.scale);
+			}
+		}
 
-		if (this.drawNodeGraph)
-			for (let i=0; i<this.nodes.length; i++)
+		if (this.drawNodeGraph) {
+			for (let i=0; i<this.nodes.length; i++) {
 				this.nodes[i].draw(ctx, this.scale);
+			}
+		}
 		
 		if (this.drawGrid) {
 			ctx.strokeStyle = 'rgba(200,200,200,0.5)';

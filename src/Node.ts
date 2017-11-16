@@ -1,4 +1,4 @@
-import { Coord } from './generic/Coord';
+import { Coord2D } from './generic/Coord';
 import { Dungeon } from './Dungeon';
 import { Link } from './Link';
 
@@ -7,18 +7,18 @@ export const enum NodeType {
     Junction = 2,
 }
 
-export class Node {
-    constructor(readonly parent: Dungeon, public pos: Coord, public weight: number = 1) {
-
+export class Node extends Coord2D {
+    constructor(readonly parent: Dungeon, x: number, y: number, public weight: number = 1) {
+		super(x, y);
     }
 
     nodeType: NodeType = NodeType.Room;
     radius: number = 1.5;
     links: Link[] = [];
-    force?: Coord;
+    force?: Coord2D;
 
 	calculateForce() {
-		let force = new Coord(0, 0);
+		let force = new Coord2D(0, 0);
 		let forceCutoffDist = 8, nodeRepulsionScale = 1, linkRepulsionForce = 0.3;
 		
 		// push away from any other node that is too close
@@ -27,21 +27,20 @@ export class Node {
 			if (otherNode == this || otherNode.nodeType == NodeType.Junction)
 				continue;
 			
-			let dist = this.pos.distanceTo(otherNode.pos);
+			let dist = this.distanceTo(otherNode);
 			if (dist > forceCutoffDist)
 				continue;
 
 			let scalarComponent = nodeRepulsionScale * otherNode.weight / dist / dist;
-			let componentForce = this.pos.directionTo(otherNode.pos).scale(-scalarComponent);
-			
-			force.applyOffset(componentForce);
+			let componentForce = this.directionTo(otherNode).scale(-scalarComponent);
+			force = force.add(componentForce);
 		}
 		
 		// push away from links you don't connect with ... tangentially
-		for (let i=0; i<this.parent.links.length; i++) {
-			let link = this.parent.links[i];
+		for (let i=0; i<this.parent.lines.length; i++) {
+			let link = this.parent.lines[i];
 			
-			if (link.fromNode == this || link.toNode == this)
+			if (link.from == this || link.to == this)
 				continue;
 			
 			let dist = this.distanceFromLink(link);
@@ -50,22 +49,22 @@ export class Node {
 			
 			let scalarComponent = linkRepulsionForce / dist / dist;
 			
-			let linkDir = link.toNode.pos.subtract(link.fromNode.pos).toUnitLength();
-			let perpDir = new Coord(linkDir.y, -linkDir.x);
+			let linkDir = link.to.subtract(link.from).toUnitLength();
+			let perpDir = new Coord2D(linkDir.y, -linkDir.x);
 			
 			// is this pointed towards the link? If so, need to reverse it.
-			let compareTo = this.pos.subtract(link.fromNode.pos).toUnitLength();
+			let compareTo = this.subtract(link.from).toUnitLength();
 			if (compareTo.x * perpDir.x + compareTo.y * perpDir.y < 0) {
 				perpDir.x = -perpDir.x;
 				perpDir.y = -perpDir.y;
 			}
 			
 			let componentForce = perpDir.scale(scalarComponent);
-			force.applyOffset(componentForce);
+			force = force.add(componentForce);
 		}
 		
 		// prevent any enormous accelerations from being created
-		let accel = new Coord(force.x / this.weight, force.y / this.weight);
+		let accel = new Coord2D(force.x / this.weight, force.y / this.weight);
 		
 		let accelLimit = 5;
 		if (accel.length() > accelLimit) {
@@ -78,10 +77,10 @@ export class Node {
     }
     
 	distanceFromLink(link: Link) {
-		let A = this.pos.x - link.fromNode.pos.x;
-		let B = this.pos.y - link.fromNode.pos.y;
-		let C = link.toNode.pos.x - link.fromNode.pos.x;
-		let D = link.toNode.pos.y - link.fromNode.pos.y;
+		let A = this.x - link.from.x;
+		let B = this.y - link.from.y;
+		let C = link.to.x - link.from.x;
+		let D = link.to.y - link.from.y;
 
 		let dot = A * C + B * D;
 		let len_sq = C * C + D * D;
@@ -92,20 +91,20 @@ export class Node {
 		let xx, yy;
 
 		if (param < 0) {
-			xx = link.fromNode.pos.x;
-			yy = link.fromNode.pos.y;
+			xx = link.from.x;
+			yy = link.from.y;
 		}
 		else if (param > 1) {
-			xx = link.toNode.pos.x;
-			yy = link.toNode.pos.y;
+			xx = link.to.x;
+			yy = link.to.y;
 		}
 		else {
-			xx = link.fromNode.pos.x + param * C;
-			yy = link.fromNode.pos.y + param * D;
+			xx = link.from.x + param * C;
+			yy = link.from.y + param * D;
 		}
 
-		let dx = this.pos.x - xx;
-		let dy = this.pos.y - yy;
+		let dx = this.x - xx;
+		let dy = this.y - yy;
 		return Math.sqrt(dx * dx + dy * dy);
     }
     
@@ -116,7 +115,7 @@ export class Node {
 		ctx.fillStyle = '#c00';
 		
 		ctx.beginPath();
-		ctx.arc(this.pos.x * scale, this.pos.y * scale, scale * this.radius, 0, 2*Math.PI);
+		ctx.arc(this.x * scale, this.y * scale, scale * this.radius, 0, 2*Math.PI);
 		ctx.fill();
 	}
 };
