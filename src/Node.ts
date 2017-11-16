@@ -1,4 +1,4 @@
-import { Coord } from './Coord';
+import { Coord } from './generic/Coord';
 import { Dungeon } from './Dungeon';
 import { Link } from './Link';
 

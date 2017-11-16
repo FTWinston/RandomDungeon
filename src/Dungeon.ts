@@ -1,32 +1,21 @@
-import { Coord } from './Coord';
+import { Coord } from './generic/Coord';
 import { Link } from './Link';
-import { Node, NodeType } from './Node';
+import { Node/*, NodeType*/ } from './Node';
 import { Tile } from './Tile';
-import { lerp, randomInt } from './Calc';
+//import { lerp, randomInt } from './Calc';
 import { Graph } from './generic/Graph';
 
-interface IRenderInfo {
-	ctx: CanvasRenderingContext2D;
-	width: number;
-	height: number;
-}
-
 export class Dungeon extends Graph<Node, Link> {
-    constructor(readonly animated: boolean, readonly getRenderInfo: () => IRenderInfo) {
+    constructor(readonly animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number, public width: number, public height: number, public scale: number) {
 		super();
-        this.intervalID = null;
-        this.generate();
+		this.generate();
     }
 
-    scale = 10;
     drawNodeGraph = true;
     drawNodeLinks = true;
     drawGrid = false;
 
-    width: number;
-    height: number;
     grid: Tile[][];
-
     intervalID: number | null;
 
 	distance(node1: Node, node2: Node) {
@@ -40,7 +29,11 @@ export class Dungeon extends Graph<Node, Link> {
 
 	generate() {
 		this.intervalID = null;
-		
+
+		this.populateNodes();
+
+		this.redraw();
+/*
 		let sequence = this.populateNodes()
 			.then(() => this.computeDelauneyTriangulation())
 			.then(() => this.computeGabrielGraph())
@@ -56,27 +49,20 @@ export class Dungeon extends Graph<Node, Link> {
 		
 		if (!this.animated)
 			sequence = sequence.then(this.redraw.bind(this));
-    }
-    
-	populateNodes() {
-		// create nodes until there are numNodes. Use same seeded PRNG each time so that the same ones are created when the number increases/decreases
-		let numNodes = 25; // TODO: this should be UI-driven
-
-		if (this.nodes.length > numNodes) {
-			this.nodes.splice(numNodes);
-		}
-		else {
-			for (let i=this.nodes.length; i<numNodes; i++) {
-				let x = Math.random() * this.width;
-				let y = Math.random() * this.height;
-				let node = new Node(this, new Coord(x, y), 1);
-				this.nodes.push(node);
-			}
-		}
-
-		return Promise.resolve();
+*/
 	}
 	
+	populateNodes() {
+		// create nodes until there are nodeCount. Use same seeded PRNG each time so that the same ones are created when the number increases/decreases.
+		this.nodes = [];
+		for (let i=0; i<this.nodeCount; i++) {
+			let x = Math.random() * (this.width - 2) + 1;
+			let y = Math.random() * (this.height - 2) + 1;
+			let node = new Node(this, new Coord(x, y), 1);
+			this.nodes.push(node);
+		}
+	}
+    /*
 	private reduceToLinearityValue() {
 		return Promise.resolve();
 	}
@@ -477,15 +463,15 @@ export class Dungeon extends Graph<Node, Link> {
 		// TODO: implement - expand rooms, by 1 row/col at a time, according to their weights
 		return Promise.resolve();
     }
-	
+	*/
 	redraw() {
-		let info = this.getRenderInfo();
 		// TODO: requestAnimationFrame?
-		this.draw(info.ctx, info.width, info.height);
+		this.draw();
 	}
 
-	draw(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		ctx.clearRect(0, 0, width, height);
+	draw() {
+		let ctx = this.ctx;
+		ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
 		
 		if (this.drawGrid) {
 			for (let x=0; x<this.width; x++)

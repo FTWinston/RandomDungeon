@@ -1,6 +1,6 @@
-import { Coord } from './Coord';
+import { Coord } from './generic/Coord';
 import { Node } from './Node';
-import { crossProduct, allEqual } from './Calc';
+import { crossProduct2D, allEqual } from './generic/Calc';
 
 export class Link {
     constructor(public fromNode: Node, public toNode: Node, length?: number) {
@@ -23,8 +23,8 @@ export class Link {
 		let r = this.toNode.pos.subtract(this.fromNode.pos);
 		let s = pos2.subtract(pos1);
 
-		let uNumerator = crossProduct(pos1.subtract(this.fromNode.pos), r);
-		let denominator = crossProduct(r, s);
+		let uNumerator = crossProduct2D(pos1.subtract(this.fromNode.pos), r);
+		let denominator = crossProduct2D(r, s);
 
 		if (uNumerator == 0 && denominator == 0) {
 			// They are colinear
@@ -54,7 +54,7 @@ export class Link {
 		}
 
 		let u = uNumerator / denominator;
-		let t = crossProduct(pos1.subtract(this.fromNode.pos), s) / denominator;
+		let t = crossProduct2D(pos1.subtract(this.fromNode.pos), s) / denominator;
 		return t > 0 && t < 1 && u > 0 && u < 1;
     }
     

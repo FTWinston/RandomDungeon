@@ -1,20 +1,68 @@
 import * as React from 'react';
 
-interface Props {
-    redraw?: () => void;
+interface FixedProps {
+    width: number;
+    height: number;
+    className?: string;
 }
 
-interface State {
+export class FixedCanvas extends React.Component<FixedProps, {}> {
+    private root: HTMLDivElement;
+    canvas: HTMLCanvasElement;
+    public ctx: CanvasRenderingContext2D;
+
+    constructor(props: FixedProps) {
+        super(props);
+
+        this.state = {
+            width: props.width === undefined ? 0 : props.width,
+            height: props.height === undefined ? 0 : props.height,
+        };
+    }
+    
+    render() {
+        return <div className={this.props.className} ref={r => this.root = r === null ? this.root : r}>
+            <canvas width={this.props.width} height={this.props.height} ref={c => this.canvas = c === null ? this.canvas : c}></canvas>
+        </div>;
+    }
+
+    private updateCtx() {
+        let ctx = this.canvas.getContext('2d');
+
+        if (ctx !== null) {
+            this.ctx = ctx;
+        }
+        else {
+            throw 'No ctx';
+        }
+    }
+
+    componentDidMount() {
+        this.updateCtx();
+    }
+
+    componentDidUpdate(prevProps: FixedProps, prevState: {}) {
+        this.updateCtx();
+    }
+}
+
+
+interface ResponsiveProps {
+    className?: string;
+    sizeChanged?: (width: number, height: number) => void;
+}
+
+interface ResponsiveState {
     width: number;
     height: number;
 }
 
-export class Canvas extends React.Component<Props, State> {
+export class ResponsiveCanvas extends React.Component<ResponsiveProps, ResponsiveState> {
     private root: HTMLDivElement;
-    private canvas: HTMLCanvasElement;
+    canvas: HTMLCanvasElement;
     public ctx: CanvasRenderingContext2D;
 
-    constructor(props: Props) {
+    constructor(props: ResponsiveProps) {
         super(props);
 
         this.state = {
@@ -24,17 +72,24 @@ export class Canvas extends React.Component<Props, State> {
     }
     
     render() {
-        return <div className="dungeonDisplay" ref={r => this.root = r === null ? this.root : r}>
+        return <div className={this.props.className} ref={r => this.root = r === null ? this.root : r}>
             <canvas width={this.state.width} height={this.state.height} ref={c => this.canvas = c === null ? this.canvas : c}></canvas>
         </div>;
     }
 
-    componentDidMount() {
+    private updateCtx() {
         let ctx = this.canvas.getContext('2d');
-        if (ctx !== null)
+
+        if (ctx !== null) {
             this.ctx = ctx;
-        else
+        }
+        else {
             throw 'No ctx';
+        }
+    }
+
+    componentDidMount() {
+        this.updateCtx();
 
         this.resizeListener = () => this.updateSize();
         window.addEventListener('resize', this.resizeListener);
@@ -42,22 +97,29 @@ export class Canvas extends React.Component<Props, State> {
         this.updateSize();
     }
 
-    private resizeListener: () => void;
+    private resizeListener?: () => void;
     
     componentWillUnmount() {
-        window.removeEventListener('resize', this.resizeListener);
+        if (this.resizeListener !== undefined)
+            window.removeEventListener('resize', this.resizeListener);
+    }
+
+    componentDidUpdate(prevProps: FixedProps, prevState: {}) {
+        this.updateCtx();
     }
 
 	updateSize() {
 		let scrollSize = this.getScrollbarSize();
-        
-        this.setState({
-            width: this.root.offsetWidth - scrollSize.width,
-            height: this.root.offsetHeight - scrollSize.height,
-        })
+        let width = this.root.offsetWidth - scrollSize.width;
+        let height = this.root.offsetHeight - scrollSize.height;
 
-        if (this.props.redraw !== undefined)
-		    this.props.redraw();
+        this.setState({
+            width: width,
+            height: height,
+        });
+
+        if (this.props.sizeChanged !== undefined)
+            this.props.sizeChanged(width, height);
     }
 
 	private getScrollbarSize() {
@@ -93,3 +155,4 @@ export class Canvas extends React.Component<Props, State> {
         }
     }
 }
+    

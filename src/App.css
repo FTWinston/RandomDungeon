@@ -30,4 +30,12 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
+
+	background-color: #ccc;
+}
+
+
+.dungeonDisplay > canvas {
+	background-color: white;
+	outline: solid 5px #666;
 }

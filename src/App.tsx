@@ -1,71 +1,116 @@
 import * as React from 'react';
-import { Canvas } from './generic/Canvas';
+import { FixedCanvas } from './generic/Canvas';
 import { Dungeon } from './Dungeon';
 import './App.css';
 
 interface State {
   dungeon?: Dungeon;
+
+  cellsWide: number;
+  cellsHigh: number;
+  cellSize: number;
+  nodeCount: number;
 }
 
 class App extends React.Component<{}, State> {
   constructor(props: {}) {
     super(props);
 
-    this.state = {};
+    this.state = {
+      cellsWide: 50,
+      cellsHigh: 50,
+      cellSize: 10,
+      nodeCount: 25,
+    };
   }
 
-  display: Canvas;
+  canvas: FixedCanvas;
 
   render() {
     return (
       <div className="App">
         <div className="App-header">
           <div className="menu">
-            <label>Size
-              <input type="range" id="numSteps" value="8" min="5" max="30" />
+            <label>Width
+              <input type="range" min="20" max="200" value={this.state.cellsWide} onChange={e => this.setState({ cellsWide: parseInt(e.target.value) })} />
             </label>
             
-            <label>Insert chance
-              <input type="range" id="chanceInsert" value="30" min="0" max="100" />
+            <label>Height
+              <input type="range" min="20" max="200" value={this.state.cellsHigh} onChange={e => this.setState({ cellsHigh: parseInt(e.target.value) })} />
+            </label>
+            
+            <label>Scale
+              <input type="range" min="2" max="50" value={this.state.cellSize} onChange={e => this.setState({ cellSize: parseInt(e.target.value) })} />
             </label>
 
-            <label>Join chance
-              <input type="range" id="chanceJoin" value="45" min="0" max="100" />
+            <label>Node count
+              <input type="range" min="2" max="100" value={this.state.nodeCount} onChange={e => this.setState({ nodeCount: parseInt(e.target.value) })} />
             </label>
 
-            <label>Append chance
-              <input type="range" id="chanceAppend" value="50" min="0" max="100" />
-            </label>
-
-            <label>Branch chance
-              <input type="range" id="chanceBranch" value="30" min="0" max="100" />
-            </label>
-
-            <label>Room variation
-              <input type="range" id="weightVariation" value="40" min="0" max="100" />
-            </label>
             <input type="button" onClick={() => this.createDungeon(true)} value="Generate slowly" />
             <input type="button" onClick={() => this.createDungeon(false)} value="Generate quickly" />
           </div>
         </div>
-        <Canvas ref={d => this.display = d === null ? this.display : d} />
+        <FixedCanvas
+          className="dungeonDisplay"
+          width={this.state.cellSize * this.state.cellsWide}
+          height={this.state.cellSize * this.state.cellsHigh}
+          ref={c => this.canvas = c === null ? this.canvas : c}
+        />
       </div>
     );
+  }
+
+  componentDidMount() {
+    this.createDungeon(false);
+  }
+  
+  componentDidUpdate(prevProps: {}, prevState: State) {
+    let dungeon = this.state.dungeon;
+    if (dungeon === undefined) {
+      return;
+    }
+
+    let redraw = false, regenerate = false;
+    if (prevState.cellsWide != this.state.cellsWide) {
+        dungeon.width = this.state.cellsWide;
+        regenerate = true;
+    }
+
+    if (prevState.cellsHigh != this.state.cellsHigh) {
+        dungeon.height = this.state.cellsHigh;
+        regenerate = true;
+    }
+
+    if (prevState.cellSize !== this.state.cellSize) {
+      dungeon.scale = this.state.cellSize;
+      redraw = true;
+    }
+
+    if (prevState.nodeCount !== this.state.nodeCount) {
+      dungeon.nodeCount = this.state.nodeCount;
+      regenerate = true;
+    }
+
+    dungeon.ctx = this.canvas.ctx;
+
+    if (regenerate) {
+      dungeon.generate();
+    }
+    else if (redraw) {
+      dungeon.redraw();
+    }
   }
 
   private createDungeon(animate: boolean) {
     if (this.state.dungeon !== undefined) {
       this.state.dungeon.destroy();
     }
-    
-    let getInfo = () => { return {
-      ctx: this.display.ctx,
-      width: this.display.state.width,
-      height: this.display.state.height,
-    }};
+
+    let dungeon = new Dungeon(animate, this.canvas.ctx, this.state.nodeCount, this.state.cellsWide, this.state.cellsHigh, this.state.cellSize);
 
     this.setState({
-      dungeon: new Dungeon(animate, getInfo),
+      dungeon: dungeon,
     });
   }
 }
