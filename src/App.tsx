@@ -156,10 +156,6 @@ class App extends React.Component<{}, State> {
     }
 
     private async createDungeon(animate: boolean) {
-        if (this.state.dungeon !== undefined) {
-            this.state.dungeon.destroy();
-        }
-
         let dungeon = new Dungeon(animate, this.canvas.ctx, this.state.nodeCount,
                                   this.state.cellsWide, this.state.cellsHigh, this.state.cellSize,
                                   this.state.connectivity);
