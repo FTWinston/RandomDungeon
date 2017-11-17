@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { FixedCanvas } from './generic/Canvas';
-import { Dungeon } from './Dungeon';
+import { Dungeon, GenerationSteps } from './Dungeon';
 import './App.css';
 
 interface State {
@@ -10,6 +10,7 @@ interface State {
   cellsHigh: number;
   cellSize: number;
   nodeCount: number;
+  connectivity: number;
 }
 
 class App extends React.Component<{}, State> {
@@ -21,6 +22,7 @@ class App extends React.Component<{}, State> {
       cellsHigh: 50,
       cellSize: 10,
       nodeCount: 25,
+      connectivity: 50,
     };
   }
 
@@ -47,6 +49,10 @@ class App extends React.Component<{}, State> {
               <input type="range" min="2" max="100" value={this.state.nodeCount} onChange={e => this.setState({ nodeCount: parseInt(e.target.value) })} />
             </label>
 
+            <label>Connectivity
+              <input type="range" min="0" max="100" value={this.state.connectivity} onChange={e => this.setState({ connectivity: parseInt(e.target.value) })} />
+            </label>
+
             <input type="button" onClick={() => this.createDungeon(true)} value="Generate slowly" />
             <input type="button" onClick={() => this.createDungeon(false)} value="Generate quickly" />
           </div>
@@ -71,32 +77,34 @@ class App extends React.Component<{}, State> {
       return;
     }
 
-    let redraw = false, regenerate = false;
+    let regenerateFrom;
     if (prevState.cellsWide != this.state.cellsWide) {
         dungeon.width = this.state.cellsWide;
-        regenerate = true;
+        regenerateFrom = GenerationSteps.CreateNodes;
     }
 
     if (prevState.cellsHigh != this.state.cellsHigh) {
         dungeon.height = this.state.cellsHigh;
-        regenerate = true;
+        regenerateFrom = GenerationSteps.CreateNodes;
     }
 
     if (prevState.cellSize !== this.state.cellSize) {
       dungeon.scale = this.state.cellSize;
-      redraw = true;
+      regenerateFrom = GenerationSteps.Render;
     }
 
     if (prevState.nodeCount !== this.state.nodeCount) {
       dungeon.nodeCount = this.state.nodeCount;
-      regenerate = true;
+      regenerateFrom = GenerationSteps.CreateNodes;
     }
 
-    if (regenerate) {
-      dungeon.generate();
+    if (prevState.connectivity !== this.state.connectivity) {
+      dungeon.connectivity = this.state.connectivity;
+      regenerateFrom = GenerationSteps.FilterLinks;
     }
-    else if (redraw) {
-      dungeon.redraw();
+
+    if (regenerateFrom !== undefined) {
+      dungeon.generate(regenerateFrom);
     }
   }
 
@@ -105,7 +113,7 @@ class App extends React.Component<{}, State> {
       this.state.dungeon.destroy();
     }
 
-    let dungeon = new Dungeon(animate, this.canvas.ctx, this.state.nodeCount, this.state.cellsWide, this.state.cellsHigh, this.state.cellSize);
+    let dungeon = new Dungeon(animate, this.canvas.ctx, this.state.nodeCount, this.state.cellsWide, this.state.cellsHigh, this.state.cellSize, this.state.connectivity);
 
     this.setState({
       dungeon: dungeon,

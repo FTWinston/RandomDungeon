@@ -42,12 +42,8 @@ export class SRandom {
         return min + this.next() * (max - min);
     }
 
-    static randomIntRange(minInclusive: number, maxExclusive: number) {
-        return Math.floor(SRandom.randomRange(minInclusive, maxExclusive));
-    }
-
-    static randomRange(minInclusive: number, maxExclusive: number) {
-        return minInclusive + Math.random() * (maxExclusive - minInclusive);
+    randomIntRange(minInclusive: number, maxExclusive: number) {
+        return Math.floor(this.nextInRange(minInclusive, maxExclusive));
     }
 
     private static mash() {

@@ -5,8 +5,15 @@ import { Tile } from './Tile';
 //import { lerp, randomInt } from './Calc';
 import { Graph } from './generic/Graph';
 
+export const enum GenerationSteps {
+	CreateNodes,
+	LinkNodes,
+	FilterLinks,
+	Render,
+}
+
 export class Dungeon extends Graph<Node, Link> {
-    constructor(readonly animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number, public width: number, public height: number, public scale: number) {
+    constructor(readonly animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number, public width: number, public height: number, public scale: number, public connectivity: number) {
 		super();
 		this.seed = Math.random();
 		this.generate();
@@ -17,7 +24,10 @@ export class Dungeon extends Graph<Node, Link> {
 	relativeNeighbourhoodLines: Link[];
 	minimumSpanningLines: Link[];
 
-    drawNodeGraph = true;
+	filteredLines: Link[];
+
+	drawNodeGraph = true;
+	drawAllNodeLinks = false;
     drawNodeLinks = true;
     drawGrid = false;
 
@@ -30,22 +40,32 @@ export class Dungeon extends Graph<Node, Link> {
 		}
     }
 
-	generate() {
+	generate(startStep = GenerationSteps.CreateNodes) {
 		this.intervalID = null;
 		
 		let seedGenerator = new SRandom(this.seed);
 
 		let nodeSeed = seedGenerator.next();
-		this.populateNodes(nodeSeed);
+		if (startStep <= GenerationSteps.CreateNodes) {
+			this.populateNodes(nodeSeed);
+		}
 
-		let node1 = new Node(this, 0, 0);
-		let node2 = new Node(this, 999999, 0);
-		let node3 = new Node(this, 0, 999999);
+		if (startStep <= GenerationSteps.LinkNodes) {
+			let node1 = new Node(this, 0, 0);
+			let node2 = new Node(this, 999999, 0);
+			let node3 = new Node(this, 0, 999999);
 
-		this.lines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
-		this.gabrielLines = this.computeGabrielGraph(this.lines);
-		this.relativeNeighbourhoodLines = this.computeRelativeNeighbourhoodGraph(this.gabrielLines);
-		this.minimumSpanningLines = this.computeMinimumSpanningTree(this.relativeNeighbourhoodLines);
+			this.lines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
+			this.gabrielLines = this.computeGabrielGraph(this.lines);
+			this.relativeNeighbourhoodLines = this.computeRelativeNeighbourhoodGraph(this.gabrielLines);
+			this.minimumSpanningLines = this.computeMinimumSpanningTree(this.relativeNeighbourhoodLines);
+		}
+
+		let filterSeed = seedGenerator.next();
+		if (startStep <= GenerationSteps.FilterLinks) {
+			this.filterLines(filterSeed);
+		}
+		
 
 		this.redraw();
 /*
@@ -78,6 +98,40 @@ export class Dungeon extends Graph<Node, Link> {
 			let node = new Node(this, x, y, 1);
 			this.nodes.push(node);
 		}
+	}
+
+	private filterLines(seed: number) {
+		let filteredLinks, selectingFrom, selectFraction;
+
+		if (this.connectivity < 50) {
+			filteredLinks = this.minimumSpanningLines.slice();
+			selectingFrom = [];
+			for (let line of this.relativeNeighbourhoodLines) {
+				if (filteredLinks.indexOf(line) === -1) {
+					selectingFrom.push(line);
+				}
+			}
+			selectFraction = this.connectivity / 50;
+		}
+		else {
+			filteredLinks = this.relativeNeighbourhoodLines.slice();
+			selectingFrom = [];
+			for (let line of this.gabrielLines) {
+				if (filteredLinks.indexOf(line) === -1) {
+					selectingFrom.push(line);
+				}
+			}
+			selectFraction = (this.connectivity - 50) / 50;
+		}
+
+		let random = new SRandom(seed);
+		let numToSelect = Math.round(selectingFrom.length * selectFraction);
+		for (let i=numToSelect; i>0; i--) {
+			let selectedLink = selectingFrom.splice(random.randomIntRange(0, selectingFrom.length), 1)[0];
+			filteredLinks.push(selectedLink);
+		}
+
+		this.filteredLines = filteredLinks;
 	}
     /*
 	private reduceToLinearityValue() {
@@ -498,12 +552,13 @@ export class Dungeon extends Graph<Node, Link> {
 			}
 		}
 		
-		if (this.drawNodeLinks) {
+		if (this.drawAllNodeLinks) {
 			ctx.strokeStyle = '#000';
 			for (let line of this.minimumSpanningLines) {
 				line.draw(ctx, this.scale);
 			}
 
+			ctx.globalAlpha = 0.25;
 			ctx.strokeStyle = '#F00';
 			for (let line of this.relativeNeighbourhoodLines) {
 				if (this.minimumSpanningLines.indexOf(line) === -1) {
@@ -518,11 +573,18 @@ export class Dungeon extends Graph<Node, Link> {
 				}
 			}
 
-			ctx.strokeStyle = '#eee';
+			ctx.strokeStyle = '#ddd';
 			for (let line of this.lines) {
 				if (this.gabrielLines.indexOf(line) === -1) {
 					line.draw(ctx, this.scale);
 				}
+			}
+			ctx.globalAlpha = 1;
+		}
+		else if (this.drawNodeLinks) {
+			ctx.strokeStyle = '#000';
+			for (let line of this.filteredLines) {
+				line.draw(ctx, this.scale);
 			}
 		}
 
