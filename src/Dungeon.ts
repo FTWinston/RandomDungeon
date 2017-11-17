@@ -84,9 +84,7 @@ export class Dungeon extends Graph<Node, Link> {
 
     private delay(milliseconds: number): Promise<void> {
         return new Promise<void>(resolve => {
-            setTimeout(() => {
-                resolve();
-            }, milliseconds);
+            setTimeout(() => resolve(), milliseconds);
         });
     }
 
@@ -95,6 +93,17 @@ export class Dungeon extends Graph<Node, Link> {
         let random = new SRandom(seed);
         this.drawNodeGraph = true;
 
+        let makeNode = () => {
+            let x = random.nextInRange(1, this.width - 1);
+            let y = random.nextInRange(1, this.height - 1);
+            return new Node(this, x, y, 1);
+        };
+        let getScaledDistSq = (node1: Node, node2: Node) => {
+            let dxScaled = (node1.x - node2.x) / this.width;
+            let dyScaled = (node1.y - node2.y) / this.height;
+            return dxScaled * dxScaled + dyScaled * dyScaled;
+        };
+
         this.nodes = [];
         for (let i = 0; i < this.nodeCount; i++) {
             if (this.animated) {
@@ -102,10 +111,16 @@ export class Dungeon extends Graph<Node, Link> {
                 await this.delay(100);
             }
 
-            let x = random.nextInRange(1, this.width - 1);
-            let y = random.nextInRange(1, this.height - 1);
-            let node = new Node(this, x, y, 1);
-            this.nodes.push(node);
+            // create two nodes, and go with the one that's furthest away from the nearest node
+            let node1 = makeNode(), node2 = makeNode();
+            let closestDist1 = Number.MAX_VALUE, closestDist2 = Number.MAX_VALUE;
+            for (let node of this.nodes) {
+                // scale x/y distances, so width/height changes don't change which node is chosen during regeneration
+                closestDist1 = Math.min(closestDist1, getScaledDistSq(node1, node));
+                closestDist2 = Math.min(closestDist2, getScaledDistSq(node2, node));
+            }
+
+            this.nodes.push(closestDist1 < closestDist2 ? node2 : node1);
         }
     }
 
@@ -221,7 +236,7 @@ export class Dungeon extends Graph<Node, Link> {
             this.redraw();
             await this.delay(animStepTime);
         }
-        
+
         this.drawAllNodeLinks = false;
 
         if (this.animated) {

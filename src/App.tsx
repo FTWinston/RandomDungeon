@@ -90,8 +90,18 @@ class App extends React.Component<{}, State> {
                             />
                         </label>
 
-                        <input type="button" onClick={() => this.createDungeon(true)} value="Generate slowly" />
-                        <input type="button" onClick={() => this.createDungeon(false)} value="Generate quickly" />
+                        <input
+                            type="button"
+                            onClick={() => this.createDungeon(true)}
+                            value="Generate slowly"
+                            disabled={this.state.animating}
+                        />
+                        <input
+                            type="button"
+                            onClick={() => this.createDungeon(false)}
+                            value="Generate quickly"
+                            disabled={this.state.animating}
+                        />
                     </div>
                 </div>
                 <FixedCanvas
