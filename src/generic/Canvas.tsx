@@ -7,9 +7,9 @@ interface FixedProps {
 }
 
 export class FixedCanvas extends React.Component<FixedProps, {}> {
-    private root: HTMLDivElement;
-    canvas: HTMLCanvasElement;
     public ctx: CanvasRenderingContext2D;
+    private root: HTMLDivElement;
+    private canvas: HTMLCanvasElement;
 
     constructor(props: FixedProps) {
         super(props);
@@ -21,22 +21,17 @@ export class FixedCanvas extends React.Component<FixedProps, {}> {
     }
     
     render() {
-        return <div className={this.props.className} ref={r => this.root = r === null ? this.root : r}>
-            <canvas width={this.props.width} height={this.props.height} ref={c => this.canvas = c === null ? this.canvas : c}></canvas>
-        </div>;
+        return (
+            <div className={this.props.className} ref={r => this.root = r === null ? this.root : r}>
+                <canvas
+                    width={this.props.width}
+                    height={this.props.height}
+                    ref={c => this.canvas = c === null ? this.canvas : c}
+                />
+            </div>
+        );
     }
-
-    private updateCtx() {
-        let ctx = this.canvas.getContext('2d');
-
-        if (ctx !== null) {
-            this.ctx = ctx;
-        }
-        else {
-            throw 'No ctx';
-        }
-    }
-
+    
     componentDidMount() {
         this.updateCtx();
     }
@@ -44,8 +39,17 @@ export class FixedCanvas extends React.Component<FixedProps, {}> {
     componentDidUpdate(prevProps: FixedProps, prevState: {}) {
         this.updateCtx();
     }
-}
 
+    private updateCtx() {
+        let ctx = this.canvas.getContext('2d');
+
+        if (ctx !== null) {
+            this.ctx = ctx;
+        } else {
+            throw 'No ctx';
+        }
+    }
+}
 
 interface ResponsiveProps {
     className?: string;
@@ -58,9 +62,10 @@ interface ResponsiveState {
 }
 
 export class ResponsiveCanvas extends React.Component<ResponsiveProps, ResponsiveState> {
-    private root: HTMLDivElement;
-    canvas: HTMLCanvasElement;
     public ctx: CanvasRenderingContext2D;
+    private root: HTMLDivElement;
+    private canvas: HTMLCanvasElement;
+    private resizeListener?: () => void;
 
     constructor(props: ResponsiveProps) {
         super(props);
@@ -72,20 +77,15 @@ export class ResponsiveCanvas extends React.Component<ResponsiveProps, Responsiv
     }
     
     render() {
-        return <div className={this.props.className} ref={r => this.root = r === null ? this.root : r}>
-            <canvas width={this.state.width} height={this.state.height} ref={c => this.canvas = c === null ? this.canvas : c}></canvas>
-        </div>;
-    }
-
-    private updateCtx() {
-        let ctx = this.canvas.getContext('2d');
-
-        if (ctx !== null) {
-            this.ctx = ctx;
-        }
-        else {
-            throw 'No ctx';
-        }
+        return (
+            <div className={this.props.className} ref={r => this.root = r === null ? this.root : r}>
+                <canvas
+                    width={this.state.width}
+                    height={this.state.height}
+                    ref={c => this.canvas = c === null ? this.canvas : c}
+                />
+            </div>
+        );
     }
 
     componentDidMount() {
@@ -96,20 +96,19 @@ export class ResponsiveCanvas extends React.Component<ResponsiveProps, Responsiv
     
         this.updateSize();
     }
-
-    private resizeListener?: () => void;
     
     componentWillUnmount() {
-        if (this.resizeListener !== undefined)
+        if (this.resizeListener !== undefined) {
             window.removeEventListener('resize', this.resizeListener);
+        }
     }
 
     componentDidUpdate(prevProps: FixedProps, prevState: {}) {
         this.updateCtx();
     }
 
-	updateSize() {
-		let scrollSize = this.getScrollbarSize();
+    updateSize() {
+        let scrollSize = this.getScrollbarSize();
         let width = this.root.offsetWidth - scrollSize.width;
         let height = this.root.offsetHeight - scrollSize.height;
 
@@ -118,11 +117,22 @@ export class ResponsiveCanvas extends React.Component<ResponsiveProps, Responsiv
             height: height,
         });
 
-        if (this.props.sizeChanged !== undefined)
+        if (this.props.sizeChanged !== undefined) {
             this.props.sizeChanged(width, height);
+        }
     }
 
-	private getScrollbarSize() {
+    private updateCtx() {
+        let ctx = this.canvas.getContext('2d');
+
+        if (ctx !== null) {
+            this.ctx = ctx;
+        } else {
+            throw 'No ctx';
+        }
+    }
+
+    private getScrollbarSize() {
         let outer = document.createElement('div');
         outer.style.visibility = 'hidden';
         outer.style.width = '100px';
@@ -151,8 +161,7 @@ export class ResponsiveCanvas extends React.Component<ResponsiveProps, Responsiv
 
         return {
             width: widthNoScroll - widthWithScroll,
-            height: heightNoScroll - heightWithScroll
-        }
+            height: heightNoScroll - heightWithScroll,
+        };
     }
 }
-    

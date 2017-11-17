@@ -2,15 +2,15 @@ import { Coord } from './Coord';
 import { Line } from './Line';
 
 class Triangle<TNode extends Coord<TNode>> {
+    circumCenter: Coord<TNode>;
+    circumRadiusSq: number;
+
     constructor(readonly vertices: [TNode, TNode, TNode]) {
         let circumCircle = vertices[0].circumCircle(vertices[1], vertices[2]);
 
         this.circumCenter = circumCircle[0];
         this.circumRadiusSq = circumCircle[1];
     }
-
-    circumCenter: Coord<TNode>;
-    circumRadiusSq: number;
 }
 
 export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode>> {
@@ -18,7 +18,7 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
     lines: TLine[] = [];
 
     computeDelauneyTriangulation(superTriangle: [TNode, TNode, TNode], createLine: (from: TNode, to: TNode) => TLine) {
-        if (this.nodes.length == 2) {
+        if (this.nodes.length === 2) {
             return [createLine(this.nodes[0], this.nodes[1])];
         }
 
@@ -35,20 +35,31 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
                 }
             }
 
-            // find the boundary of polygonal hole formed by these "bad" triangles
-            // ...get the edges of the "bad" triangles which don't touch other bad triangles. Each pair of nodes here represents a line.
+            // Find the boundary of polygonal hole formed by these "bad" triangles...
+            // Get the edges of the "bad" triangles which don't touch other bad triangles...
+            // Each pair of nodes here represents a line.
             let polygon: TNode[] = [];
             for (let triangle of badTriangles) {
-                for (let i=0; i<3; i++) {
+                for (let i = 0; i < 3; i++) {
                     let edgeFrom = triangle.vertices[i];
-                    let edgeTo = triangle.vertices[i == 2 ? 0 : i + 1];
+                    let edgeTo = triangle.vertices[i === 2 ? 0 : i + 1];
 
                     let sharedWithOther = false;
                     for (let other of badTriangles) {
-                        if (other !== triangle && other.vertices.indexOf(edgeFrom) !== -1 && other.vertices.indexOf(edgeTo) !== -1) {
-                            sharedWithOther = true;
-                            break;
+                        if (other === triangle) {
+                            continue;
                         }
+
+                        if (other.vertices.indexOf(edgeFrom) === -1) {
+                            continue;
+                        }
+
+                        if (other.vertices.indexOf(edgeTo) === -1) {
+                            continue;
+                        }
+
+                        sharedWithOther = true;
+                        break;
                     }
 
                     if (!sharedWithOther) {
@@ -63,14 +74,14 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
             }
 
             // re-triangulate the polygonal hole ... create a new triangle for each edge
-            for (let i=0; i<polygon.length - 1; i+=2) {
-                let triangle = new Triangle<TNode>([polygon[i], polygon[i+1], node]);
+            for (let i = 0; i < polygon.length - 1; i += 2) {
+                let triangle = new Triangle<TNode>([polygon[i], polygon[i + 1], node]);
                 triangulation.push(triangle);
             }
         }
 
         // remove all triangles that contain a vertex from the original super-triangle
-        for (let i=0; i<triangulation.length; i++) {
+        for (let i = 0; i < triangulation.length; i++) {
             let triangle = triangulation[i];
             for (let vertex of triangle.vertices) {
                 if (superTriangle.indexOf(vertex) !== -1) {
@@ -92,24 +103,19 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
                 if (link.from === v0) {
                     if (link.to === v1) {
                         firstDuplicate = true;
-                    }
-                    else if (link.to === v2) {
+                    } else if (link.to === v2) {
                         thirdDuplicate = true;
                     }
-                }
-                else if (link.from === v1) {
+                } else if (link.from === v1) {
                     if (link.to === v0) {
                         firstDuplicate = true;
-                    }
-                    else if (link.to === v2) {
+                    } else if (link.to === v2) {
                         secondDuplicate = true;
                     }
-                }
-                else if (link.from === v2) {
+                } else if (link.from === v2) {
                     if (link.to === v0) {
                         thirdDuplicate = true;
-                    }
-                    else if (link.to === v1) {
+                    } else if (link.to === v1) {
                         secondDuplicate = true;
                     }
                 }
@@ -127,11 +133,6 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
         }
 
         return links;
-    }
-
-    private insideCircumcircle(point: TNode, triangle: Triangle<TNode>) {
-        let distSq = point.distanceSqTo(triangle.circumCenter);
-        return distSq <= triangle.circumRadiusSq;
     }
 
     computeGabrielGraph(links: TLine[] | undefined = undefined) {
@@ -199,15 +200,16 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
         }
         
         links = links === undefined ? this.lines : links;
-        let possibleLinks = links.map(l => { return { link: l, lengthSq: l.from.distanceSqTo(l.to) }});
+        let possibleLinks = links.map(l => { return { link: l, lengthSq: l.from.distanceSqTo(l.to) }; });
         possibleLinks.sort((a, b) => a.lengthSq - b.lengthSq);
 
         let visitedNodes: TNode[] = [firstNode];
         let graphLinks: TLine[] = [];
 
         while (unvisitedNodes.length > 0 && possibleLinks.length > 0) {
-            // find the first link that connects to a node in visitedNodes. The links are sorted by length, so the first one will be the shortest one.
-            for (let i=0; i<possibleLinks.length; i++) {
+            // Find the first link that connects to a node in visitedNodes...
+            // The links are sorted by length, so the first one will be the shortest one.
+            for (let i = 0; i < possibleLinks.length; i++) {
                 let testLink = possibleLinks[i].link;
                 
                 let alreadyHasFrom = visitedNodes.indexOf(testLink.from) !== -1;
@@ -224,7 +226,7 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
                 let addingNode = alreadyHasFrom ? testLink.to : testLink.from;
                 
                 // remove all other links from possibleLinks that connect addingNode to visitedNodes
-                for (let j=i; j<possibleLinks.length; j++) {
+                for (let j = i; j < possibleLinks.length; j++) {
                     testLink = possibleLinks[j].link;
                     if ((testLink.from === addingNode && visitedNodes.indexOf(testLink.to) !== -1)
                     || (testLink.to === addingNode && visitedNodes.indexOf(testLink.from) !== -1)) {
@@ -239,5 +241,10 @@ export abstract class Graph<TNode extends Coord<TNode>, TLine extends Line<TNode
         }
 
         return graphLinks;
+    }
+
+    private insideCircumcircle(point: TNode, triangle: Triangle<TNode>) {
+        let distSq = point.distanceSqTo(triangle.circumCenter);
+        return distSq <= triangle.circumRadiusSq;
     }
 }

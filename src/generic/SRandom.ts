@@ -7,7 +7,7 @@ export class SRandom {
     private s2: number;
 
     constructor(public readonly seed: number | string) {
-        var mash = SRandom.mash();
+        var mash = this.mash();
 
         this.c = 1;
         this.s0 = mash(' ');
@@ -15,16 +15,19 @@ export class SRandom {
         this.s2 = mash(' ');
 
         this.s0 -= mash(seed);
-        if (this.s0 < 0)
+        if (this.s0 < 0) {
             this.s0 += 1;
+        }
 
         this.s1 -= mash(seed);
-        if (this.s1 < 0)
+        if (this.s1 < 0) {
             this.s1 += 1;
+        }
 
         this.s2 -= mash(seed);
-        if (this.s2 < 0)
+        if (this.s2 < 0) {
             this.s2 += 1;
+        }
     }
 
     next() {
@@ -46,7 +49,7 @@ export class SRandom {
         return Math.floor(this.nextInRange(minInclusive, maxExclusive));
     }
 
-    private static mash() {
+    private mash() {
         let n = 0xefc8249d;
 
         let mash = function(data: number | string) {
