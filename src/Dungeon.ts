@@ -13,11 +13,10 @@ export const enum GenerationSteps {
 
 export class Dungeon extends Graph<Node, Link> {
     seed: number;
+    delauneyLines: Link[];
     gabrielLines: Link[];
     relativeNeighbourhoodLines: Link[];
     minimumSpanningLines: Link[];
-
-    filteredLines: Link[];
 
     drawNodeGraph = true;
     drawAllNodeLinks = false;
@@ -27,11 +26,10 @@ export class Dungeon extends Graph<Node, Link> {
     grid: Tile[][];
     intervalID: number | null;
     
-    constructor(readonly animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number,
+    constructor(private animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number,
                 public width: number, public height: number, public scale: number, public connectivity: number) {
         super();
         this.seed = Math.random();
-        this.generate();
     }
 
     destroy() {
@@ -40,30 +38,27 @@ export class Dungeon extends Graph<Node, Link> {
         }
     }
 
-    generate(startStep: GenerationSteps = GenerationSteps.CreateNodes) {
+    async generate(startStep: GenerationSteps = GenerationSteps.CreateNodes) {
         this.intervalID = null;
+
+        if (this.animated) {
+            this.drawNodeGraph = this.drawNodeLinks = this.drawAllNodeLinks = false;
+        }
 
         let seedGenerator = new SRandom(this.seed);
 
         let nodeSeed = seedGenerator.next();
         if (startStep <= GenerationSteps.CreateNodes) {
-            this.populateNodes(nodeSeed);
+            await this.populateNodes(nodeSeed);
         }
 
         if (startStep <= GenerationSteps.LinkNodes) {
-            let node1 = new Node(this, 0, 0);
-            let node2 = new Node(this, 999999, 0);
-            let node3 = new Node(this, 0, 999999);
-
-            this.lines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
-            this.gabrielLines = this.computeGabrielGraph(this.lines);
-            this.relativeNeighbourhoodLines = this.computeRelativeNeighbourhoodGraph(this.gabrielLines);
-            this.minimumSpanningLines = this.computeMinimumSpanningTree(this.relativeNeighbourhoodLines);
+            await this.populateLinks();
         }
 
         let filterSeed = seedGenerator.next();
         if (startStep <= GenerationSteps.FilterLinks) {
-            this.filterLines(filterSeed);
+            await this.filterLines(filterSeed);
         }
 
         /*
@@ -78,6 +73,7 @@ export class Dungeon extends Graph<Node, Link> {
         sequence = sequence.then(this.redraw.bind(this));
         */
 
+        this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
     }
 
@@ -86,12 +82,26 @@ export class Dungeon extends Graph<Node, Link> {
         this.draw();
     }
 
-    private populateNodes(seed: number) {
+    private delay(milliseconds: number): Promise<void> {
+        return new Promise<void>(resolve => {
+            setTimeout(() => {
+                resolve();
+            }, milliseconds);
+        });
+    }
+
+    private async populateNodes(seed: number) {
         // Remove all nodes, then create nodeCount nodes. Using same seed ensures same ones are recreated.
         let random = new SRandom(seed);
+        this.drawNodeGraph = true;
 
         this.nodes = [];
         for (let i = 0; i < this.nodeCount; i++) {
+            if (this.animated) {
+                this.redraw();
+                await this.delay(100);
+            }
+
             let x = random.nextInRange(1, this.width - 1);
             let y = random.nextInRange(1, this.height - 1);
             let node = new Node(this, x, y, 1);
@@ -99,38 +109,125 @@ export class Dungeon extends Graph<Node, Link> {
         }
     }
 
-    private filterLines(seed: number) {
-        let filteredLinks, selectingFrom, selectFraction;
+    private async populateLinks() {
+        this.drawAllNodeLinks = true;
+
+        this.lines = [];
+        this.delauneyLines = [];
+        this.gabrielLines = [];
+        this.relativeNeighbourhoodLines = [];
+        this.minimumSpanningLines = [];
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1500);
+        }
+
+        let node1 = new Node(this, 0, 0);
+        let node2 = new Node(this, 999999, 0);
+        let node3 = new Node(this, 0, 999999);
+
+        this.delauneyLines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
+        
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1500);
+        }
+
+        this.gabrielLines = this.computeGabrielGraph(this.delauneyLines);
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1500);
+        }
+
+        this.relativeNeighbourhoodLines = this.computeRelativeNeighbourhoodGraph(this.gabrielLines);
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1500);
+        }
+
+        this.minimumSpanningLines = this.computeMinimumSpanningTree(this.relativeNeighbourhoodLines);
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1500);
+        }
+    }
+
+    private async filterLines(seed: number) {
+        this.drawNodeLinks = true;
+        let selectingFrom, selectFraction;
+        let animStepTime = 0;
 
         if (this.connectivity < 50) {
-            filteredLinks = this.minimumSpanningLines.slice();
+            this.lines = this.minimumSpanningLines.slice();
             selectingFrom = [];
             for (let line of this.relativeNeighbourhoodLines) {
-                if (filteredLinks.indexOf(line) === -1) {
+                if (this.lines.indexOf(line) === -1) {
                     selectingFrom.push(line);
                 }
             }
             selectFraction = this.connectivity / 50;
+
+            let numSteps = selectFraction * selectingFrom.length + 1;
+            animStepTime = 5000 / numSteps; // ensure that animation always lasts the same duration
         } else {
-            filteredLinks = this.relativeNeighbourhoodLines.slice();
             selectingFrom = [];
             for (let line of this.gabrielLines) {
-                if (filteredLinks.indexOf(line) === -1) {
+                if (this.relativeNeighbourhoodLines.indexOf(line) === -1) {
                     selectingFrom.push(line);
                 }
             }
             selectFraction = (this.connectivity - 50) / 50;
-        }
 
+            if (this.animated) {
+                // start from the minimum and add everything in the relative neighbourhood, to get a fuller animation
+                this.lines = this.minimumSpanningLines.slice();
+
+                let numSteps = selectFraction * selectingFrom.length
+                    + this.relativeNeighbourhoodLines.length - this.minimumSpanningLines.length
+                    + 1;
+                animStepTime = 5000 / numSteps; // ensure that animation always lasts the same duration
+                    
+                for (let line of this.relativeNeighbourhoodLines) {
+                    if (this.lines.indexOf(line) === -1) {
+                        this.redraw();
+                        await this.delay(animStepTime);
+
+                        this.lines.push(line);
+                    }
+                }
+            } else {
+                this.lines = this.relativeNeighbourhoodLines.slice();
+            }
+        }
+        
         let random = new SRandom(seed);
         let numToSelect = Math.round(selectingFrom.length * selectFraction);
 
         for (let i = numToSelect; i > 0; i--) {
+            if (this.animated) {
+                this.redraw();
+                await this.delay(animStepTime);
+            }
+
             let selectedLink = selectingFrom.splice(random.randomIntRange(0, selectingFrom.length), 1)[0];
-            filteredLinks.push(selectedLink);
+            this.lines.push(selectedLink);
         }
 
-        this.filteredLines = filteredLinks;
+        if (this.animated) {
+            this.redraw();
+            await this.delay(animStepTime);
+        }
+        
+        this.drawAllNodeLinks = false;
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1000);
+        }
     }
     /*
 	private reduceToLinearityValue() {
@@ -548,12 +645,15 @@ export class Dungeon extends Graph<Node, Link> {
         }
 
         if (this.drawAllNodeLinks) {
+            if (this.drawNodeLinks) {
+                ctx.globalAlpha = 0.2;
+            }
+
             ctx.strokeStyle = '#000';
             for (let line of this.minimumSpanningLines) {
                 line.draw(ctx, this.scale);
             }
 
-            ctx.globalAlpha = 0.25;
             ctx.strokeStyle = '#F00';
             for (let line of this.relativeNeighbourhoodLines) {
                 if (this.minimumSpanningLines.indexOf(line) === -1) {
@@ -569,15 +669,17 @@ export class Dungeon extends Graph<Node, Link> {
             }
 
             ctx.strokeStyle = '#ddd';
-            for (let line of this.lines) {
+            for (let line of this.delauneyLines) {
                 if (this.gabrielLines.indexOf(line) === -1) {
                     line.draw(ctx, this.scale);
                 }
             }
             ctx.globalAlpha = 1;
-        } else if (this.drawNodeLinks) {
+        }
+        
+        if (this.drawNodeLinks) {
             ctx.strokeStyle = '#000';
-            for (let line of this.filteredLines) {
+            for (let line of this.lines) {
                 line.draw(ctx, this.scale);
             }
         }

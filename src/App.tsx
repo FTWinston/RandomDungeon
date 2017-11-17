@@ -5,6 +5,7 @@ import './App.css';
 
 interface State {
     dungeon?: Dungeon;
+    animating: boolean;
 
     cellsWide: number;
     cellsHigh: number;
@@ -20,6 +21,7 @@ class App extends React.Component<{}, State> {
         super(props);
 
         this.state = {
+            animating: false,
             cellsWide: 50,
             cellsHigh: 50,
             cellSize: 10,
@@ -40,6 +42,7 @@ class App extends React.Component<{}, State> {
                                 max="200"
                                 value={this.state.cellsWide}
                                 onChange={e => this.setState({ cellsWide: parseInt(e.target.value, 10) })}
+                                disabled={this.state.animating}
                             />
                         </label>
 
@@ -50,6 +53,7 @@ class App extends React.Component<{}, State> {
                                 max="200"
                                 value={this.state.cellsHigh}
                                 onChange={e => this.setState({ cellsHigh: parseInt(e.target.value, 10) })}
+                                disabled={this.state.animating}
                             />
                         </label>
 
@@ -60,6 +64,7 @@ class App extends React.Component<{}, State> {
                                 max="50"
                                 value={this.state.cellSize}
                                 onChange={e => this.setState({ cellSize: parseInt(e.target.value, 10) })}
+                                disabled={this.state.animating}
                             />
                         </label>
 
@@ -70,6 +75,7 @@ class App extends React.Component<{}, State> {
                                 max="100"
                                 value={this.state.nodeCount}
                                 onChange={e => this.setState({ nodeCount: parseInt(e.target.value, 10) })}
+                                disabled={this.state.animating}
                             />
                         </label>
 
@@ -80,6 +86,7 @@ class App extends React.Component<{}, State> {
                                 max="100"
                                 value={this.state.connectivity}
                                 onChange={e => this.setState({ connectivity: parseInt(e.target.value, 10) })}
+                                disabled={this.state.animating}
                             />
                         </label>
 
@@ -138,7 +145,7 @@ class App extends React.Component<{}, State> {
         }
     }
 
-    private createDungeon(animate: boolean) {
+    private async createDungeon(animate: boolean) {
         if (this.state.dungeon !== undefined) {
             this.state.dungeon.destroy();
         }
@@ -149,6 +156,13 @@ class App extends React.Component<{}, State> {
 
         this.setState({
             dungeon: dungeon,
+            animating: animate,
+        });
+
+        await dungeon.generate();
+        
+        this.setState({
+            animating: false,
         });
     }
 }

@@ -9,7 +9,7 @@ export const enum NodeType {
 
 export class Node extends Coord2D {
     nodeType: NodeType = NodeType.Room;
-    radius: number = 1.5;
+    radius: number = 0.75;
     links: Link[] = [];
     force?: Coord2D;
 
