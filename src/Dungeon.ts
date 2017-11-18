@@ -9,8 +9,8 @@ export const enum GenerationSteps {
     LinkNodes,
     FilterLinks,
     CreateRooms,
-	ExpandLines,
-	DetectWalls,
+    ExpandLines,
+    DetectWalls,
     Render,
 }
 
@@ -68,8 +68,8 @@ export class Dungeon extends Graph<Node, Link> {
 
         if (startStep <= GenerationSteps.DetectWalls) {
             await this.detectWalls();
-		}
-		
+        }
+        
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
     }
@@ -262,8 +262,8 @@ export class Dungeon extends Graph<Node, Link> {
             let y = Math.floor(node.y);
 
             let tile = this.grid[x][y];
-			tile.node = node;
-			tile.isFloor = true;
+            tile.node = node;
+            tile.isFloor = true;
         }
         
         this.drawGrid = true;
@@ -417,16 +417,16 @@ export class Dungeon extends Graph<Node, Link> {
                 };
             }
 
-            minX = Math.max(0, minX);
-            maxX = Math.min(this.width - 1, maxX);
-            minY = Math.max(0, minY);
-            maxY = Math.min(this.height - 1, maxY);
+            minX = Math.max(1, minX);
+            maxX = Math.min(this.width - 2, maxX);
+            minY = Math.max(1, minY);
+            maxY = Math.min(this.height - 2, maxY);
 
             for (let x = minX; x <= maxX; x++) {
                 for (let y = minY; y <= maxY; y++) {
                     let tile = this.grid[x][y];
                     if (tile.node === null && (filter === undefined || filter(x, y))) {
-						tile.isFloor = true;
+                        tile.isFloor = true;
                         tile.node = node;
                     }
                 }
@@ -437,54 +437,53 @@ export class Dungeon extends Graph<Node, Link> {
                 await this.delay(250);
             }
         }
-	}
-	
-	private async detectWalls() {
-		for (let depth = 0; depth <= 5; depth++) {
-			for (let x = 0; x < this.width; x++) {
-				for (let y = 0; y < this.height; y++) {
-					let tile = this.grid[x][y];
-					if (tile.isFloor || (tile.wallDepth !== undefined && tile.wallDepth < depth)) {
-						continue;
-					}
+    }
+    
+    private async detectWalls() {
+        for (let depth = 0; depth <= 5; depth++) {
+            for (let x = 0; x < this.width; x++) {
+                for (let y = 0; y < this.height; y++) {
+                    let tile = this.grid[x][y];
+                    if (tile.isFloor || (tile.wallDepth !== undefined && tile.wallDepth < depth)) {
+                        continue;
+                    }
 
-					let toTest = [];
-					if (x > 0) {
-						toTest.push(this.grid[x-1][y]);
-					}
-					if (x < this.width - 1) {
-						toTest.push(this.grid[x+1][y]);
-					}
-					if (y > 0) {
-						toTest.push(this.grid[x][y-1]);
-					}
-					if (y < this.height - 1) {
-						toTest.push(this.grid[x][y+1]);
-					}
+                    let toTest = [];
+                    if (x > 0) {
+                        toTest.push(this.grid[x - 1][y]);
+                    }
+                    if (x < this.width - 1) {
+                        toTest.push(this.grid[x + 1][y]);
+                    }
+                    if (y > 0) {
+                        toTest.push(this.grid[x][y - 1]);
+                    }
+                    if (y < this.height - 1) {
+                        toTest.push(this.grid[x][y + 1]);
+                    }
 
-					for (let test of toTest) {
-						if (test.isFloor) {
-							tile.wallDepth = 0;
-							break;
-						}
-						else if (test.wallDepth === depth - 1) {
-							tile.wallDepth = depth;
-							break;
-						}
-					}
-				}
-			}
+                    for (let test of toTest) {
+                        if (test.isFloor) {
+                            tile.wallDepth = 0;
+                            break;
+                        } else if (test.wallDepth === depth - 1) {
+                            tile.wallDepth = depth;
+                            break;
+                        }
+                    }
+                }
+            }
 
             if (this.animated) {
                 this.redraw();
                 await this.delay(500);
             }
-		}
-	}
+        }
+    }
 
     private draw() {
         let ctx = this.ctx;
-		ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
+        ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
 
         if (this.drawGrid) {
             for (let x = 0; x < this.width; x++) {

@@ -1,26 +1,30 @@
 .App {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+
+  width: 100vw;
+  min-height: 100vh;
 }
 
 .menu {
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 2em;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
 	background-color: lightgray;
+	width: 100vw;
 }
 
 .dungeonDisplay {
-	position: absolute;
-	top: 2em;
-	left: 0;
-	right: 0;
-	bottom: 0;
-
 	background-color: #ccc;
+	flex-grow: 1;
+	
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
-
 
 .dungeonDisplay > canvas {
 	background-color: white;

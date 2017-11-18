@@ -33,7 +33,6 @@ class App extends React.Component<{}, State> {
     render() {
         return (
             <div className="App">
-                <div className="App-header">
                     <div className="menu">
                         <label>Width
                             <input
@@ -103,7 +102,7 @@ class App extends React.Component<{}, State> {
                             disabled={this.state.animating}
                         />
                     </div>
-                </div>
+
                 <FixedCanvas
                     className="dungeonDisplay"
                     width={this.state.cellSize * this.state.cellsWide}
