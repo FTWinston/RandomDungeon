@@ -8,8 +8,8 @@ export const enum GenerationSteps {
     CreateNodes,
     LinkNodes,
     FilterLinks,
-    LinkToGrid,
-    GrowRooms,
+    CreateRooms,
+    ExpandLines,
     Render,
 }
 
@@ -55,14 +55,14 @@ export class Dungeon extends Graph<Node, Link> {
             await this.filterLines(filterSeed);
         }
 
-        if (startStep <= GenerationSteps.LinkToGrid) {
+        let roomSeed = seedGenerator.next();
+        if (startStep <= GenerationSteps.CreateRooms) {
             await this.linkNodesToGrid();
-            await this.linkLinesToGrid();
+            await this.growRooms(roomSeed);
         }
 
-        let roomSeed = seedGenerator.next();
-        if (startStep <= GenerationSteps.GrowRooms) {
-            await this.growRooms(roomSeed);
+        if (startStep <= GenerationSteps.ExpandLines) {
+            await this.linkLinesToGrid();
         }
 
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
@@ -273,8 +273,10 @@ export class Dungeon extends Graph<Node, Link> {
         // associate each tile of the grid with all of the links that overlap or touch it
         // this is Xiaolin Wi's algorithm, without the antialiasing.
         for (let link of this.lines) {
-            let x0 = Math.floor(link.from.x), x1 = Math.floor(link.to.x);
-            let y0 = Math.floor(link.from.y), y1 = Math.floor(link.to.y);
+            let x0 = Math.floor(link.from.x);
+            let x1 = Math.floor(link.to.x);
+            let y0 = Math.floor(link.from.y);
+            let y1 = Math.floor(link.to.y);
             
             this.grid[x0][y0].links.push(link);
             this.grid[x1][y1].links.push(link);
@@ -326,7 +328,7 @@ export class Dungeon extends Graph<Node, Link> {
         
             if (this.animated) {
                 this.redraw();
-                await this.delay(500);
+                await this.delay(250);
             }
         }
 
@@ -338,7 +340,96 @@ export class Dungeon extends Graph<Node, Link> {
     }
     
     private async growRooms(seed: number) {
-        
+        let random = new SRandom(seed);
+
+        for (let node of this.nodes) {
+            let nodeX = Math.floor(node.x);
+            let nodeY = Math.floor(node.y);
+
+            let minX: number, minY: number, maxX: number, maxY: number;
+
+            switch (random.randomIntRange(0, 6)) {
+                case 0:
+                    // junction
+                    minX = nodeX - 1; maxX = nodeX + 1;
+                    minY = nodeY - 1; maxY = nodeY + 1;
+                    break;
+                case 1:
+                case 2: {
+                    // small room
+                    let halfWidth = random.randomIntRange(1, 4);
+                    let halfHeight = random.randomIntRange(1, 4);
+                    minX = nodeX - halfWidth; maxX = nodeX + halfWidth;
+                    minY = nodeY - halfHeight; maxY = nodeY + halfHeight;
+                    break;
+                }
+                case 3: {
+                    // large room
+                    let halfWidth = random.randomIntRange(3, 8);
+                    let halfHeight = random.randomIntRange(3, 8);
+                    let xOffset = random.randomIntRange(-3, 4);
+                    let yOffset = random.randomIntRange(-3, 4);
+                    minX = nodeX - halfWidth + xOffset; maxX = nodeX + halfWidth + xOffset;
+                    minY = nodeY - halfHeight + yOffset; maxY = nodeY + halfHeight + yOffset;
+                    break;
+                }
+                case 4: {
+                    // long room
+                    let halfWidth = random.randomIntRange(7, 12);
+                    let halfHeight = random.randomIntRange(2, 5);
+                    let xOffset = random.randomIntRange(-6, 7);
+                    minX = nodeX - halfWidth + xOffset; maxX = nodeX + halfWidth + xOffset;
+                    minY = nodeY - halfHeight; maxY = nodeY + halfHeight;
+                    break;
+                }
+                case 5: {
+                    // tall room
+                    let halfWidth = random.randomIntRange(2, 5);
+                    let halfHeight = random.randomIntRange(7, 12);
+                    let yOffset = random.randomIntRange(-6, 7);
+                    minX = nodeX - halfWidth; maxX = nodeX + halfWidth;
+                    minY = nodeY - halfHeight + yOffset; maxY = nodeY + halfHeight + yOffset;
+                    break;
+                }
+                default:
+                    continue;
+            }
+
+            let isRound = random.next() < 0.5;
+            let filter;
+            if (isRound) {
+                maxX += 2; maxY += 2;
+                minX -= 2; minY -= 2;
+
+                filter = (x: number, y: number) => {
+                    let a = maxX - nodeX;
+                    let b = maxY - nodeY;
+                    x -= nodeX;
+                    y -= nodeY;
+
+                    return (x * x) / (a * a) + (y * y) / (b * b) <= 1;
+                };
+            }
+
+            minX = Math.max(0, minX);
+            maxX = Math.min(this.width - 1, maxX);
+            minY = Math.max(0, minY);
+            maxY = Math.min(this.height - 1, maxY);
+
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    let tile = this.grid[x][y];
+                    if (tile.node === null && (filter === undefined || filter(x, y))) {
+                        tile.node = node;
+                    }
+                }
+            }
+
+            if (this.animated) {
+                this.redraw();
+                await this.delay(250);
+            }
+        }
     }
 
     private draw() {

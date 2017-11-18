@@ -22,8 +22,8 @@ class App extends React.Component<{}, State> {
 
         this.state = {
             animating: false,
-            cellsWide: 50,
-            cellsHigh: 50,
+            cellsWide: 100,
+            cellsHigh: 70,
             cellSize: 10,
             nodeCount: 25,
             connectivity: 50,

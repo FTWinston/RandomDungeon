@@ -10,9 +10,7 @@ export class Tile {
     }
 
     drawFill(ctx: CanvasRenderingContext2D, scale: number) {
-        if (this.node != null) {
-            ctx.fillStyle = '#c00';
-        } else if (this.links.length > 0) {
+        if (this.node != null || this.links.length > 0) {
             ctx.fillStyle = '#fff';
         } else {
             return;
