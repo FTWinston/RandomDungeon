@@ -1,25 +1,27 @@
-import { Link } from './Link';
 import { Node } from './Node';
 
 export class Tile {
     public node: Node | null = null;
-    public links: Link[] = [];
+    public isFloor = false;
+    public wallDepth: number | undefined;
 
     constructor(readonly x: number, readonly y: number) {
-        this.links = [];
+
     }
 
     drawFill(ctx: CanvasRenderingContext2D, scale: number) {
-        if (this.node != null || this.links.length > 0) {
-            ctx.fillStyle = '#fff';
+        if (this.wallDepth === 0) {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(this.x * scale, this.y * scale, scale, scale);
+        } else if (this.wallDepth !== undefined) {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(this.x * scale, this.y * scale, scale, scale);
+        } else if (this.isFloor) {
+            ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+            ctx.strokeRect(this.x * scale, this.y * scale, scale, scale);
         } else {
-            return;
+            ctx.fillStyle = '#666';
+            ctx.fillRect(this.x * scale, this.y * scale, scale, scale);
         }
-        
-        ctx.fillRect(this.x * scale, this.y * scale, scale, scale);        
-    }
-    
-    drawEdges(ctx: CanvasRenderingContext2D, scale: number) {
-        // to-do: don't fill in tiles, just draw the edges.
     }
 }

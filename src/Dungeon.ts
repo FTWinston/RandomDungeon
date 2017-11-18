@@ -9,7 +9,8 @@ export const enum GenerationSteps {
     LinkNodes,
     FilterLinks,
     CreateRooms,
-    ExpandLines,
+	ExpandLines,
+	DetectWalls,
     Render,
 }
 
@@ -65,6 +66,10 @@ export class Dungeon extends Graph<Node, Link> {
             await this.linkLinesToGrid();
         }
 
+        if (startStep <= GenerationSteps.DetectWalls) {
+            await this.detectWalls();
+		}
+		
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
     }
@@ -256,8 +261,9 @@ export class Dungeon extends Graph<Node, Link> {
             let x = Math.floor(node.x);
             let y = Math.floor(node.y);
 
-            let cell = this.grid[x][y];
-            cell.node = node;
+            let tile = this.grid[x][y];
+			tile.node = node;
+			tile.isFloor = true;
         }
         
         this.drawGrid = true;
@@ -278,8 +284,8 @@ export class Dungeon extends Graph<Node, Link> {
             let y0 = Math.floor(link.from.y);
             let y1 = Math.floor(link.to.y);
             
-            this.grid[x0][y0].links.push(link);
-            this.grid[x1][y1].links.push(link);
+            this.grid[x0][y0].isFloor = true;
+            this.grid[x1][y1].isFloor = true;
 
             let steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
             if (steep) { // swap x & y, ensure not steep
@@ -310,16 +316,16 @@ export class Dungeon extends Graph<Node, Link> {
                 let almostInteger = Math.abs(y - iY) < 0.10;
                 
                 if (steep) {
-                    this.grid[iY + closestSideStep][x].links.push(link);
-                    this.grid[iY][x].links.push(link);
+                    this.grid[iY + closestSideStep][x].isFloor = true;
+                    this.grid[iY][x].isFloor = true;
                     if (!almostInteger) {
-                        this.grid[iY - closestSideStep][x].links.push(link);
+                        this.grid[iY - closestSideStep][x].isFloor = true;
                     }
                 } else {
-                    this.grid[x][iY + closestSideStep].links.push(link);
-                    this.grid[x][iY].links.push(link);
+                    this.grid[x][iY + closestSideStep].isFloor = true;
+                    this.grid[x][iY].isFloor = true;
                     if (!almostInteger) {
-                        this.grid[x][iY - closestSideStep].links.push(link);
+                        this.grid[x][iY - closestSideStep].isFloor = true;
                     }
                 }
                 
@@ -420,6 +426,7 @@ export class Dungeon extends Graph<Node, Link> {
                 for (let y = minY; y <= maxY; y++) {
                     let tile = this.grid[x][y];
                     if (tile.node === null && (filter === undefined || filter(x, y))) {
+						tile.isFloor = true;
                         tile.node = node;
                     }
                 }
@@ -430,22 +437,61 @@ export class Dungeon extends Graph<Node, Link> {
                 await this.delay(250);
             }
         }
-    }
+	}
+	
+	private async detectWalls() {
+		for (let depth = 0; depth <= 5; depth++) {
+			for (let x = 0; x < this.width; x++) {
+				for (let y = 0; y < this.height; y++) {
+					let tile = this.grid[x][y];
+					if (tile.isFloor || (tile.wallDepth !== undefined && tile.wallDepth < depth)) {
+						continue;
+					}
+
+					let toTest = [];
+					if (x > 0) {
+						toTest.push(this.grid[x-1][y]);
+					}
+					if (x < this.width - 1) {
+						toTest.push(this.grid[x+1][y]);
+					}
+					if (y > 0) {
+						toTest.push(this.grid[x][y-1]);
+					}
+					if (y < this.height - 1) {
+						toTest.push(this.grid[x][y+1]);
+					}
+
+					for (let test of toTest) {
+						if (test.isFloor) {
+							tile.wallDepth = 0;
+							break;
+						}
+						else if (test.wallDepth === depth - 1) {
+							tile.wallDepth = depth;
+							break;
+						}
+					}
+				}
+			}
+
+            if (this.animated) {
+                this.redraw();
+                await this.delay(500);
+            }
+		}
+	}
 
     private draw() {
         let ctx = this.ctx;
+		ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
 
         if (this.drawGrid) {
-            ctx.fillStyle = '#666666';
-            ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
-
             for (let x = 0; x < this.width; x++) {
                 for (let y = 0; y < this.height; y++) {
                     this.grid[x][y].drawFill(ctx, this.scale);
                 }
             }
-        } else {
-            ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
         }
 
         if (this.extraLinkAlpha > 0) {
@@ -492,20 +538,6 @@ export class Dungeon extends Graph<Node, Link> {
                 this.nodes[i].draw(ctx, this.scale);
             }
             ctx.globalAlpha = 1;
-        }
-
-        if (this.drawGrid) {
-            ctx.strokeStyle = 'rgba(200,200,200,0.5)';
-            ctx.beginPath();
-            for (let x = 0; x < this.width; x++) {
-                ctx.moveTo(x * this.scale, 0);
-                ctx.lineTo(x * this.scale, this.height * this.scale);
-            }
-            for (let y = 0; y < this.height; y++) {
-                ctx.moveTo(0, y * this.scale);
-                ctx.lineTo(this.width * this.scale, y * this.scale);
-            }
-            ctx.stroke();
         }
     }
 }
