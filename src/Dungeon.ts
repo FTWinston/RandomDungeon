@@ -513,9 +513,17 @@ export class Dungeon extends Graph<Node, Link> {
             tile = this.pickBestAdjacentWallTile(firstTile, t => t.wallDepth === 0);
         }
         
+        let addKeyPoint = true;
         let prevTile = firstTile;
         while (tile !== undefined) {
-            curve.keyPoints.push(tile);
+            // to make curves look better, only include alternate tiles ... unless they're important ones.
+            if ((tile.x !== prevTile.x && tile.y !== prevTile.y) || tile.isFloor || tile === firstTile) {
+                addKeyPoint = true;
+            }
+            if (addKeyPoint) {
+                curve.keyPoints.push(tile);
+            }
+            addKeyPoint = !addKeyPoint;
             
             // if the next one is the first one, note that this is a loop and stop.
             if (tile === firstTile) {
