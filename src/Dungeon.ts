@@ -3,6 +3,7 @@ import { Link } from './Link';
 import { Node } from './Node';
 import { Tile } from './Tile';
 import { Graph } from './generic/Graph';
+import { Curve } from './generic/Curve';
 
 export const enum GenerationSteps {
     CreateNodes,
@@ -11,6 +12,7 @@ export const enum GenerationSteps {
     CreateRooms,
     ExpandLines,
     DetectWalls,
+    CurveWalls,
     Render,
 }
 
@@ -25,8 +27,11 @@ export class Dungeon extends Graph<Node, Link> {
     extraLinkAlpha = 0;
     drawNodeLinks = true;
     drawGrid = false;
+    drawWalls = false;
+    highlightWallCurves = false;
 
     grid: Tile[][];
+    walls: Curve[];
     
     constructor(private animated: boolean, public ctx: CanvasRenderingContext2D, public nodeCount: number,
                 public width: number, public height: number, public scale: number, public connectivity: number) {
@@ -37,7 +42,7 @@ export class Dungeon extends Graph<Node, Link> {
     async generate(startStep: GenerationSteps = GenerationSteps.CreateNodes) {
         if (this.animated) {
             this.nodeAlpha = this.extraLinkAlpha = 0;
-            this.drawNodeLinks = false;
+            this.drawNodeLinks = this.drawGrid = this.drawWalls = false;
         }
 
         let seedGenerator = new SRandom(this.seed);
@@ -70,6 +75,10 @@ export class Dungeon extends Graph<Node, Link> {
             await this.detectWalls();
         }
         
+        if (startStep <= GenerationSteps.CurveWalls) {
+            await this.generateWallCurves();
+        }
+
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
     }
@@ -448,20 +457,7 @@ export class Dungeon extends Graph<Node, Link> {
                         continue;
                     }
 
-                    let toTest = [];
-                    if (x > 0) {
-                        toTest.push(this.grid[x - 1][y]);
-                    }
-                    if (x < this.width - 1) {
-                        toTest.push(this.grid[x + 1][y]);
-                    }
-                    if (y > 0) {
-                        toTest.push(this.grid[x][y - 1]);
-                    }
-                    if (y < this.height - 1) {
-                        toTest.push(this.grid[x][y + 1]);
-                    }
-
+                    let toTest = this.getAdjacent(tile);
                     for (let test of toTest) {
                         if (test.isFloor) {
                             tile.wallDepth = 0;
@@ -480,12 +476,162 @@ export class Dungeon extends Graph<Node, Link> {
             }
         }
     }
+    
+    private async generateWallCurves() {
+        this.walls = [];
+        this.drawWalls = true;
+        this.highlightWallCurves = true;
+
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                let tile = this.grid[x][y];
+                if (tile.wallDepth === 0 && !tile.isFloor) {
+                    await this.generateWallCurve(tile);
+                }
+            }
+        }
+        
+        this.highlightWallCurves = false;
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(1500);
+        }
+    }
+
+    private async generateWallCurve(firstTile: Tile) {
+        let curve = new Curve();
+        this.walls.push(curve);
+
+        curve.keyPoints.push(firstTile);
+        firstTile.isFloor = true;
+
+        // Pick next tile, keep looping. When there isn't a next one, stop.
+        let tile = this.pickBestAdjacentWallTile(firstTile, t => !t.isFloor && t.wallDepth === 0);
+        if (tile === undefined) {
+            // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
+            tile = this.pickBestAdjacentWallTile(firstTile, t => t.wallDepth === 0);
+        }
+        
+        let prevTile = firstTile;
+        while (tile !== undefined) {
+            curve.keyPoints.push(tile);
+            
+            // if the next one is the first one, note that this is a loop and stop.
+            if (tile === firstTile) {
+                curve.isLoop = true;
+                break;
+            }
+            
+            if (tile.isFloor) {
+                break; // intersected a(nother) curve, so end this one
+            }
+            tile.isFloor = true;
+            
+            let next = this.pickBestAdjacentWallTile(tile, t => !t.isFloor && t.wallDepth === 0 && t !== prevTile);
+            if (next === undefined) {
+                // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
+                next = this.pickBestAdjacentWallTile(tile, t => t.wallDepth === 0 && t !== prevTile);
+            }
+            prevTile = tile;
+            tile = next;
+
+            if (this.animated) {
+                curve.updateRenderPoints();
+                this.redraw();
+                await this.delay(10);
+            }
+        }
+
+        // see if we should step back from the first tile to link to a previous curve
+        if (tile !== firstTile && curve.keyPoints.length > 1) {
+            let second = curve.keyPoints[1];
+            let back = this.pickBestAdjacentWallTile(firstTile, t => t.isFloor && t.wallDepth === 0 && t !== second);
+            if (back !== undefined) {
+                curve.keyPoints.unshift(back);
+            }
+        }
+
+        curve.updateRenderPoints();
+
+        if (this.animated) {
+            this.redraw();
+            await this.delay(500);
+        }
+    }
+
+    private getAdjacent(from: Tile, diagonal: boolean = false) {
+        let results = [];
+
+        if (from.x > 0) {
+            results.push(this.grid[from.x - 1][from.y]);
+        }
+        if (from.x < this.width - 1) {
+            results.push(this.grid[from.x + 1][from.y]);
+        }
+        if (from.y > 0) {
+            results.push(this.grid[from.x][from.y - 1]);
+        }
+        if (from.y < this.height - 1) {
+            results.push(this.grid[from.x][from.y + 1]);
+        }
+        
+        if (diagonal) {
+            if (from.x > 0) {
+                if (from.y > 0) {
+                    results.push(this.grid[from.x - 1][from.y - 1]);
+                }
+                if (from.y < this.height - 1) {
+                    results.push(this.grid[from.x - 1][from.y + 1]);
+                }
+            }
+            if (from.x < this.width - 1) {
+                if (from.y > 0) {
+                    results.push(this.grid[from.x + 1][from.y - 1]);
+                }
+                if (from.y < this.height - 1) {
+                    results.push(this.grid[from.x + 1][from.y + 1]);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    private pickBestAdjacentWallTile(from: Tile, filter: (tile: Tile) => boolean) {
+        let bestTile = undefined;
+        let bestNumAdjacentFloorTiles = 0;
+
+        let toTest = this.getAdjacent(from, true);
+        for (let tile of toTest) {
+            if (!filter(tile)) {
+                continue;
+            }
+
+            let numAdjacentFloorTiles = 0;
+            let allAdjacent = this.getAdjacent(tile);
+
+            for (let adjacent of allAdjacent) {
+                if (adjacent.wallDepth === undefined) {
+                    numAdjacentFloorTiles ++;
+                }
+            }
+
+            if (numAdjacentFloorTiles > bestNumAdjacentFloorTiles) {
+                bestNumAdjacentFloorTiles = numAdjacentFloorTiles;
+                bestTile = tile;
+            }
+        }
+        
+        return bestTile;
+    }
 
     private draw() {
         let ctx = this.ctx;
         ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
 
         if (this.drawGrid) {
+            ctx.lineWidth = 1;
             for (let x = 0; x < this.width; x++) {
                 for (let y = 0; y < this.height; y++) {
                     this.grid[x][y].drawFill(ctx, this.scale);
@@ -494,6 +640,7 @@ export class Dungeon extends Graph<Node, Link> {
         }
 
         if (this.extraLinkAlpha > 0) {
+            ctx.lineWidth = 1;
             ctx.globalAlpha = this.extraLinkAlpha;
 
             ctx.strokeStyle = '#000';
@@ -524,7 +671,17 @@ export class Dungeon extends Graph<Node, Link> {
             ctx.globalAlpha = 1;
         }
         
+        if (this.drawWalls) {
+            ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
+            ctx.lineCap = 'round';
+            for (let curve of this.walls) {
+                curve.draw(ctx, this.scale, this.scale);
+            }
+            ctx.lineCap = 'butt';
+        }
+        
         if (this.drawNodeLinks) {
+            ctx.lineWidth = 1;
             ctx.strokeStyle = '#000';
             for (let line of this.lines) {
                 line.draw(ctx, this.scale);
