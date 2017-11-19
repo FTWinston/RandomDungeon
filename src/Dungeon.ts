@@ -29,6 +29,7 @@ export class Dungeon extends Graph<Node, Link> {
     drawGrid = false;
     drawWalls = false;
     highlightWallCurves = false;
+    fillOutside = false;
 
     grid: Tile[][];
     walls: Curve[];
@@ -42,7 +43,7 @@ export class Dungeon extends Graph<Node, Link> {
     async generate(startStep: GenerationSteps = GenerationSteps.CreateNodes) {
         if (this.animated) {
             this.nodeAlpha = this.extraLinkAlpha = 0;
-            this.drawNodeLinks = this.drawGrid = this.drawWalls = false;
+            this.drawNodeLinks = this.drawGrid = this.drawWalls = this.fillOutside = false;
         }
 
         let seedGenerator = new SRandom(this.seed);
@@ -77,6 +78,7 @@ export class Dungeon extends Graph<Node, Link> {
         
         if (startStep <= GenerationSteps.CurveWalls) {
             await this.generateWallCurves();
+            this.fillOutside = true;
         }
 
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
@@ -180,10 +182,9 @@ export class Dungeon extends Graph<Node, Link> {
     private async filterLines(seed: number) {
         this.drawNodeLinks = true;
         this.extraLinkAlpha = 0.2;
-
+        
         let selectingFrom, selectFraction;
-        let animStepTime = 0;
-
+        
         if (this.connectivity < 50) {
             this.lines = this.minimumSpanningLines.slice();
             selectingFrom = [];
@@ -193,9 +194,6 @@ export class Dungeon extends Graph<Node, Link> {
                 }
             }
             selectFraction = this.connectivity / 50;
-
-            let numSteps = selectFraction * selectingFrom.length + 1;
-            animStepTime = 5000 / numSteps; // ensure that animation always lasts the same duration
         } else {
             selectingFrom = [];
             for (let line of this.gabrielLines) {
@@ -204,52 +202,22 @@ export class Dungeon extends Graph<Node, Link> {
                 }
             }
             selectFraction = (this.connectivity - 50) / 50;
-
-            if (this.animated) {
-                // start from the minimum and add everything in the relative neighbourhood, to get a fuller animation
-                this.lines = this.minimumSpanningLines.slice();
-
-                let numSteps = selectFraction * selectingFrom.length
-                    + this.relativeNeighbourhoodLines.length - this.minimumSpanningLines.length
-                    + 1;
-                animStepTime = 5000 / numSteps; // ensure that animation always lasts the same duration
-                    
-                for (let line of this.relativeNeighbourhoodLines) {
-                    if (this.lines.indexOf(line) === -1) {
-                        this.redraw();
-                        await this.delay(animStepTime);
-
-                        this.lines.push(line);
-                    }
-                }
-            } else {
-                this.lines = this.relativeNeighbourhoodLines.slice();
-            }
+            this.lines = this.relativeNeighbourhoodLines.slice();
         }
         
         let random = new SRandom(seed);
         let numToSelect = Math.round(selectingFrom.length * selectFraction);
 
         for (let i = numToSelect; i > 0; i--) {
-            if (this.animated) {
-                this.redraw();
-                await this.delay(animStepTime);
-            }
-
             let selectedLink = selectingFrom.splice(random.randomIntRange(0, selectingFrom.length), 1)[0];
             this.lines.push(selectedLink);
-        }
-
-        if (this.animated) {
-            this.redraw();
-            await this.delay(animStepTime);
         }
 
         this.extraLinkAlpha = 0;
 
         if (this.animated) {
             this.redraw();
-            await this.delay(1000);
+            await this.delay(1500);
         }
     }
 
@@ -559,6 +527,8 @@ export class Dungeon extends Graph<Node, Link> {
                 curve.keyPoints.unshift(back);
             }
         }
+        
+        // TODO: if either end of curve touches the end of another line, see if we should reverse this curve. And if both ends touch, also consider reversing the other one, i guess?
 
         curve.updateRenderPoints();
 
@@ -679,6 +649,27 @@ export class Dungeon extends Graph<Node, Link> {
             ctx.globalAlpha = 1;
         }
         
+        if (this.fillOutside) {
+            ctx.save();
+            ctx.beginPath();
+
+            ctx.rect(0, 0, this.width * this.scale, this.height * this.scale);
+            for (let curve of this.walls) {
+                curve.draw(ctx, this.scale, this.scale, false);
+            }
+            ctx.clip();
+
+            // TODO: when two paths meet start-to-start or end-to-end, one needs to be reversed.
+            // They can even combine into one path, maybe.
+            // But how to handle meetings with non-ends?
+            // "hole" paths  need to ensure they go in the same direction (clockwise?) as containing ones.
+
+            ctx.fillStyle = '#666';
+            ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
+
+            ctx.restore();
+        }
+
         if (this.drawWalls) {
             ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
             ctx.lineCap = 'round';

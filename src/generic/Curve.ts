@@ -12,7 +12,7 @@ export class Curve {
         this.isLoop = false;
     }
 
-    draw(ctx: CanvasRenderingContext2D, scale: number, width: number) {
+    draw(ctx: CanvasRenderingContext2D, scale: number, width: number, newPath: boolean = true) {
         let halfScale = scale / 2;
 
         if (this.keyPoints.length === 1) {
@@ -20,9 +20,13 @@ export class Curve {
             let cx = cell.x * scale + halfScale;
             let cy = cell.y * scale + halfScale;
 
-            ctx.beginPath();
+            if (newPath) {
+                ctx.beginPath();
+            }
             ctx.arc(cx, cy, width / 2, 0, Math.PI * 2);
-            ctx.fill();
+            if (newPath) {
+                ctx.fill();
+            }
             return;
         }
         
@@ -30,7 +34,9 @@ export class Curve {
         let x = points[0] * scale + halfScale;
         let y = points[1] * scale + halfScale;
         
-        ctx.beginPath();
+        if (newPath) {
+            ctx.beginPath();
+        }
         ctx.moveTo(x, y);
         
         ctx.lineWidth = width;
@@ -39,7 +45,10 @@ export class Curve {
             y = points[i + 1] * scale + halfScale;
             ctx.lineTo(x, y);
         }
-        ctx.stroke();
+
+        if (newPath) {
+            ctx.stroke();
+        }
     }
 
     updateRenderPoints() {
