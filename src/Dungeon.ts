@@ -595,7 +595,7 @@ export class Dungeon extends Graph<Node, Link> {
 
     private pickBestAdjacentWallTile(from: Tile, filter: (tile: Tile) => boolean) {
         let bestTile = undefined;
-        let bestNumAdjacentFloorTiles = Number.MAX_VALUE;
+        let bestNumAdjacentFloorTiles = 0;
 
         let toTest = this.getAdjacent(from, true);
         for (let tile of toTest) {
@@ -612,8 +612,7 @@ export class Dungeon extends Graph<Node, Link> {
                 }
             }
 
-            // "best" now means the one with the fewest adjacent floor tiles (but still at least one), to encourage completing outer loops before inners
-            if (numAdjacentFloorTiles > 0 && numAdjacentFloorTiles < bestNumAdjacentFloorTiles) {
+            if (numAdjacentFloorTiles > bestNumAdjacentFloorTiles) {
                 bestNumAdjacentFloorTiles = numAdjacentFloorTiles;
                 bestTile = tile;
             }
