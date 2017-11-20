@@ -102,8 +102,8 @@ export class Dungeon extends Graph<Node, Link> {
         this.nodeAlpha = 1;
 
         let makeNode = () => {
-            let x = random.nextInRange(1, this.width - 1);
-            let y = random.nextInRange(1, this.height - 1);
+            let x = random.nextInRange(2, this.width - 2);
+            let y = random.nextInRange(2, this.height - 2);
             return new Node(this, x, y, 1);
         };
         let getScaledDistSq = (node1: Node, node2: Node) => {
@@ -429,6 +429,12 @@ export class Dungeon extends Graph<Node, Link> {
                     for (let test of toTest) {
                         if (test.isFloor) {
                             tile.wallDepth = 0;
+                            
+                            if (this.animated) {
+                                this.redraw();
+                                await this.delay(2);
+                            }
+
                             break;
                         } else if (test.wallDepth === depth - 1) {
                             tile.wallDepth = depth;
@@ -454,15 +460,12 @@ export class Dungeon extends Graph<Node, Link> {
             for (let y = 0; y < this.height; y++) {
                 let tile = this.grid[x][y];
                 if (tile.wallDepth === 0 && !tile.isFloor) {
-                    let curve = await this.generateWallCurve(tile);
-                    this.walls.push(curve);
+                    await this.generateWallCurve(tile);
                     
                     if (this.animated) {
                         this.redraw();
                         await this.delay(500);
                     }
-
-                    await this.backtrackAndBranch(curve);
                 }
             }
         }
@@ -477,6 +480,7 @@ export class Dungeon extends Graph<Node, Link> {
 
     private async generateWallCurve(firstTile: Tile) {
         let curve = new Curve();
+        this.walls.push(curve);
 
         curve.keyPoints.push(firstTile);
         firstTile.isFloor = true;
@@ -533,24 +537,45 @@ export class Dungeon extends Graph<Node, Link> {
             }
         }
 
+        await this.backtrackAndBranch(curve, tile === undefined);
+
         curve.updateRenderPoints();
         return curve;
     }
     
-    private async backtrackAndBranch(curve: Curve) {
-        // reiterate around this curve, trying to find somewhere to branch off a new curve from
-        for (let curveTile of curve.keyPoints) {
+    private async backtrackAndBranch(curve: Curve, isDeadEnd: boolean) {
+        // iterate backwards round this curve, trying to find somewhere to branch off a new curve from
+        for (let i = curve.keyPoints.length - 1; i >= 0; i--) {
+            let curveTile = curve.keyPoints[i];
+
             // if there's an adjacent tile a wall can start from, generate a new curve, then call this method on it again
             let viableTile = this.pickBestAdjacentWallTile(curveTile as Tile, t => !t.isFloor && t.wallDepth === 0);
             if (viableTile !== undefined) {
                 let newCurve = await this.generateWallCurve(curveTile as Tile);
-                this.walls.push(newCurve);
                 
+                if (isDeadEnd) {
+                    if (this.animated) {
+                        this.redraw();
+                        await this.delay(500);
+                    }
+                    
+                    // chop off the dead end from the initial curve, and graft the new curve on.
+                    // then have the chopped-off dead end be the new curve instead
+                    let newBranch = newCurve.keyPoints.slice(1);
+
+                    let deadEnd = curve.keyPoints.splice(i + 1)
+                    deadEnd.unshift(curveTile);
+                    newCurve.keyPoints = deadEnd;
+
+                    curve.keyPoints = curve.keyPoints.concat(newBranch);
+                    curve.updateRenderPoints();
+                    newCurve.updateRenderPoints();
+                }
+
                 if (this.animated) {
                     this.redraw();
                     await this.delay(500);
                 }
-                await this.backtrackAndBranch(newCurve);
             }
         }
     }
@@ -604,7 +629,7 @@ export class Dungeon extends Graph<Node, Link> {
             }
 
             let numAdjacentFloorTiles = 0;
-            let allAdjacent = this.getAdjacent(tile);
+            let allAdjacent = this.getAdjacent(tile, true);
 
             for (let adjacent of allAdjacent) {
                 if (adjacent.wallDepth === undefined) {

@@ -50,9 +50,7 @@ export class Curve {
 
         if (newPath) {
             ctx.stroke();
-        }
-
-        if (newPath) {
+            
             ctx.fillStyle = ctx.strokeStyle = '#fff';
             let prev = ctx.lineWidth;
             ctx.lineWidth = 1;
