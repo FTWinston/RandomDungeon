@@ -6,25 +6,27 @@ export class Curve {
     keyPoints: Coord2D[];
     isLoop: boolean;
     private renderPoints: number[];
+    private color: string;
 
     constructor(public curvature: number = 0.75) {
         this.keyPoints = [];
         this.isLoop = false;
+        this.color = `#${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
     }
 
     draw(ctx: CanvasRenderingContext2D, scale: number, width: number, newPath: boolean = true) {
         let halfScale = scale / 2;
+        ctx.fillStyle = ctx.strokeStyle = this.color;
 
         if (this.keyPoints.length === 1) {
-            let cell = this.keyPoints[0];
-            let cx = cell.x * scale + halfScale;
-            let cy = cell.y * scale + halfScale;
+            if (newPath) {
+                let cell = this.keyPoints[0];
+                let cx = cell.x * scale + halfScale;
+                let cy = cell.y * scale + halfScale;
 
-            if (newPath) {
                 ctx.beginPath();
-            }
-            ctx.arc(cx, cy, width / 2, 0, Math.PI * 2);
-            if (newPath) {
+                ctx.arc(cx, cy, width / 2, 0, Math.PI * 2);
+            
                 ctx.fill();
             }
             return;
@@ -48,6 +50,34 @@ export class Curve {
 
         if (newPath) {
             ctx.stroke();
+        }
+
+        if (newPath) {
+            ctx.fillStyle = ctx.strokeStyle = '#fff';
+            let prev = ctx.lineWidth;
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+
+            // a + at the start
+            x = points[0] * scale + halfScale;
+            y = points[1] * scale + halfScale;
+            ctx.moveTo(x - scale, y);
+            ctx.lineTo(x + scale, y);
+            ctx.moveTo(x, y - scale);
+            ctx.lineTo(x, y + scale);
+
+            // an X at the end
+            x = points[points.length - 2] * scale + halfScale;
+            y = points[points.length - 1] * scale + halfScale;
+            ctx.moveTo(x - scale, y - scale);
+            ctx.lineTo(x + scale, y + scale);
+            ctx.moveTo(x + scale, y - scale);
+            ctx.lineTo(x - scale, y + scale);
+
+            ctx.stroke();
+
+            ctx.lineWidth = prev;
         }
     }
 

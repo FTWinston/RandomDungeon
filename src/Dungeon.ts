@@ -16,12 +16,6 @@ export const enum GenerationSteps {
     Render,
 }
 
-interface WallCurveInfo {
-    curve: Curve;
-    start: Tile;
-    end: Tile;
-}
-
 export class Dungeon extends Graph<Node, Link> {
     seed: number;
     delauneyLines: Link[];
@@ -455,13 +449,20 @@ export class Dungeon extends Graph<Node, Link> {
         this.walls = [];
         this.drawWalls = true;
         this.highlightWallCurves = true;
-        let endLinks: WallCurveInfo[] = [];
 
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 let tile = this.grid[x][y];
                 if (tile.wallDepth === 0 && !tile.isFloor) {
-                    await this.generateWallCurve(tile, endLinks);
+                    let curve = await this.generateWallCurve(tile);
+                    this.walls.push(curve);
+                    
+                    if (this.animated) {
+                        this.redraw();
+                        await this.delay(500);
+                    }
+
+                    await this.backtrackAndBranch(curve);
                 }
             }
         }
@@ -474,9 +475,8 @@ export class Dungeon extends Graph<Node, Link> {
         }
     }
 
-    private async generateWallCurve(firstTile: Tile, endLinks: WallCurveInfo[]) {
+    private async generateWallCurve(firstTile: Tile) {
         let curve = new Curve();
-        this.walls.push(curve);
 
         curve.keyPoints.push(firstTile);
         firstTile.isFloor = true;
@@ -487,23 +487,25 @@ export class Dungeon extends Graph<Node, Link> {
             // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
             tile = this.pickBestAdjacentWallTile(firstTile, t => t.wallDepth === 0);
         }
+
+        //let lastTile = firstTile;
         
-        let endTouchesAnother = false;
-        let lastTile = firstTile;
-        
-        let addKeyPoint = true;
+        //let addKeyPoint = true;
         let prevTile = firstTile;
         while (tile !== undefined) {
-            lastTile = tile;
-
+            //lastTile = tile;
+            /*
             // to make curves look better, only include alternate tiles ... unless they're important ones.
             if ((tile.x !== prevTile.x && tile.y !== prevTile.y) || tile.isFloor || tile === firstTile) {
                 addKeyPoint = true;
             }
             if (addKeyPoint) {
+                */
                 curve.keyPoints.push(tile);
+                /*
             }
             addKeyPoint = !addKeyPoint;
+            */
             
             // if the next one is the first one, note that this is a loop and stop.
             if (tile === firstTile) {
@@ -512,7 +514,6 @@ export class Dungeon extends Graph<Node, Link> {
             }
             
             if (tile.isFloor) {
-                endTouchesAnother = true;
                 break; // intersected a(nother) curve, so end this one
             }
             tile.isFloor = true;
@@ -531,40 +532,26 @@ export class Dungeon extends Graph<Node, Link> {
                 await this.delay(10);
             }
         }
-        
-        let curveInfo = {
-            curve: curve,
-            start: firstTile,
-            end: lastTile,
-        };
-
-        // see if we should step back from the first tile to link to a previous curve
-        let startTouchesAnother = false;
-        if (tile !== firstTile && curve.keyPoints.length > 1) {
-            let second = curve.keyPoints[1];
-            let back = this.pickBestAdjacentWallTile(firstTile, t => t.isFloor && t.wallDepth === 0 && t !== second);
-            if (back !== undefined) {
-                curve.keyPoints.unshift(back);
-                firstTile = back;
-
-                // TODO: check if we should reverse order based on this
-                startTouchesAnother = true;
-                this.checkReverseWallCurve(curveInfo, endLinks, true);    
-            }
-        }
-        
-        if (endTouchesAnother) {
-            this.checkReverseWallCurve(curveInfo, endLinks, !startTouchesAnother);
-        }
-        // TODO: if either end of curve touches the end of another line, see if we should reverse this curve. And if both ends touch, also consider reversing the other one, i guess?
 
         curve.updateRenderPoints();
-
-        endLinks.push(curveInfo);
-
-        if (this.animated) {
-            this.redraw();
-            await this.delay(500);
+        return curve;
+    }
+    
+    private async backtrackAndBranch(curve: Curve) {
+        // reiterate around this curve, trying to find somewhere to branch off a new curve from
+        for (let curveTile of curve.keyPoints) {
+            // if there's an adjacent tile a wall can start from, generate a new curve, then call this method on it again
+            let viableTile = this.pickBestAdjacentWallTile(curveTile as Tile, t => !t.isFloor && t.wallDepth === 0);
+            if (viableTile !== undefined) {
+                let newCurve = await this.generateWallCurve(curveTile as Tile);
+                this.walls.push(newCurve);
+                
+                if (this.animated) {
+                    this.redraw();
+                    await this.delay(500);
+                }
+                await this.backtrackAndBranch(newCurve);
+            }
         }
     }
 
@@ -632,32 +619,6 @@ export class Dungeon extends Graph<Node, Link> {
         }
         
         return bestTile;
-    }
-    
-    private checkReverseWallCurve(curve: WallCurveInfo, endLinks: WallCurveInfo[], canReverseThisOne: boolean) {
-        
-        for (let other of endLinks) {
-            if (other === curve) {
-                continue;
-            }
-            if (curve.end === other.start) {
-                // this is the right order, that's fine
-                break;
-            } else if (curve.end === other.end) {
-                if (canReverseThisOne) {
-                    // this is the wrong order, swap things around
-                    curve.curve.keyPoints.reverse();
-                    let tmp = curve.end;
-                    curve.end = curve.start;
-                    curve.start = tmp;
-                } else {
-                    // can't reverse this array, try reversing the one we're touching instead
-                    this.checkReverseWallCurve(other, endLinks, true);
-                    // TODO: this isn't great cos there might be another that joins onto this one, and so on
-                }
-                break;
-            }
-        }
     }
 
     private draw() {
