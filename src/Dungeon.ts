@@ -711,8 +711,17 @@ export class Dungeon extends Graph<Node, Link> {
             }
             ctx.clip('evenodd');
 
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = '#fff';
             ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
+
+			ctx.strokeStyle = '#000';
+			ctx.lineWidth = this.scale * 0.2;
+			let vmax = Math.max(this.width, this.height) * this.scale;
+			for (let i = vmax * 2; i >= 0; i -= this.scale * 0.75) {
+				ctx.moveTo(0, i);
+				ctx.lineTo(i, 0);
+			}
+			ctx.stroke();
 
             ctx.restore();
         }
