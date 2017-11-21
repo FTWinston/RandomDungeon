@@ -15,6 +15,10 @@ export class Tile extends Coord2D {
             ctx.fillStyle = '#000';
             ctx.fillRect(this.x * scale, this.y * scale, scale, scale);
         } else if (this.isFloor) {
+            if (this.room !== null) {
+                ctx.fillStyle = this.room.color;
+                ctx.fillRect(this.x * scale, this.y * scale, scale, scale);
+            }
             ctx.strokeStyle = 'rgba(200,200,200,0.5)';
             ctx.strokeRect(this.x * scale, this.y * scale, scale, scale);
         } else {

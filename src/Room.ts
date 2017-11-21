@@ -12,9 +12,12 @@ export class Room extends Coord2D {
     radius: number = 0.75;
     links: Pathway[] = [];
     force?: Coord2D;
+    readonly color: string;
 
     constructor(readonly parent: Dungeon, x: number, y: number, public weight: number = 1) {
         super(x, y);
+        let chars = ['a', 'b', 'c', 'd', 'e', 'f'];
+        this.color = `#${chars[Math.floor(Math.random() * 6)]}${chars[Math.floor(Math.random() * 6)]}${chars[Math.floor(Math.random() * 6)]}`;
     }
     
     drawNode(ctx: CanvasRenderingContext2D, scale: number) {
