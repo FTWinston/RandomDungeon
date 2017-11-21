@@ -1,8 +1,8 @@
-import { Node } from './Node';
+import { Room } from './Room';
 import { Coord2D } from './generic/Coord';
 
 export class Tile extends Coord2D {
-    public node: Node | null = null;
+    public room: Room | null = null;
     public isFloor = false;
     public isWall = false;
 

@@ -1,6 +1,6 @@
 import { SRandom } from './generic/SRandom';
-import { Link } from './Link';
-import { Node } from './Node';
+import { Pathway } from './Pathway';
+import { Room } from './Room';
 import { Tile } from './Tile';
 import { Graph } from './generic/Graph';
 import { Curve } from './generic/Curve';
@@ -16,12 +16,12 @@ export const enum GenerationSteps {
     Render,
 }
 
-export class Dungeon extends Graph<Node, Link> {
+export class Dungeon extends Graph<Room, Pathway> {
     seed: number;
-    delauneyLines: Link[];
-    gabrielLines: Link[];
-    relativeNeighbourhoodLines: Link[];
-    minimumSpanningLines: Link[];
+    delauneyLines: Pathway[];
+    gabrielLines: Pathway[];
+    relativeNeighbourhoodLines: Pathway[];
+    minimumSpanningLines: Pathway[];
 
     nodeAlpha = 0;
     extraLinkAlpha = 0;
@@ -104,9 +104,9 @@ export class Dungeon extends Graph<Node, Link> {
         let makeNode = () => {
             let x = random.nextInRange(2, this.width - 2);
             let y = random.nextInRange(2, this.height - 2);
-            return new Node(this, x, y, 1);
+            return new Room(this, x, y, 1);
         };
-        let getScaledDistSq = (node1: Node, node2: Node) => {
+        let getScaledDistSq = (node1: Room, node2: Room) => {
             let dxScaled = (node1.x - node2.x) / this.width;
             let dyScaled = (node1.y - node2.y) / this.height;
             return dxScaled * dxScaled + dyScaled * dyScaled;
@@ -146,11 +146,11 @@ export class Dungeon extends Graph<Node, Link> {
             await this.delay(1500);
         }
 
-        let node1 = new Node(this, 0, 0);
-        let node2 = new Node(this, 999999, 0);
-        let node3 = new Node(this, 0, 999999);
+        let node1 = new Room(this, 0, 0);
+        let node2 = new Room(this, 999999, 0);
+        let node3 = new Room(this, 0, 999999);
 
-        this.delauneyLines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Link(from, to));
+        this.delauneyLines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Pathway(from, to));
         
         if (this.animated) {
             this.redraw();
@@ -239,7 +239,7 @@ export class Dungeon extends Graph<Node, Link> {
             let y = Math.floor(node.y);
 
             let tile = this.grid[x][y];
-            tile.node = node;
+            tile.room = node;
             tile.isFloor = true;
         }
         
@@ -402,9 +402,9 @@ export class Dungeon extends Graph<Node, Link> {
             for (let x = minX; x <= maxX; x++) {
                 for (let y = minY; y <= maxY; y++) {
                     let tile = this.grid[x][y];
-                    if (tile.node === null && (filter === undefined || filter(x, y))) {
+                    if (tile.room === null && (filter === undefined || filter(x, y))) {
                         tile.isFloor = true;
-                        tile.node = node;
+                        tile.room = node;
                     }
                 }
             }
@@ -675,27 +675,27 @@ export class Dungeon extends Graph<Node, Link> {
 
             ctx.strokeStyle = '#000';
             for (let line of this.minimumSpanningLines) {
-                line.draw(ctx, this.scale);
+                line.drawLine(ctx, this.scale);
             }
 
             ctx.strokeStyle = '#F00';
             for (let line of this.relativeNeighbourhoodLines) {
                 if (this.minimumSpanningLines.indexOf(line) === -1) {
-                    line.draw(ctx, this.scale);
+                    line.drawLine(ctx, this.scale);
                 }
             }
 
             ctx.strokeStyle = '#0CF';
             for (let line of this.gabrielLines) {
                 if (this.relativeNeighbourhoodLines.indexOf(line) === -1) {
-                    line.draw(ctx, this.scale);
+                    line.drawLine(ctx, this.scale);
                 }
             }
 
             ctx.strokeStyle = '#ddd';
             for (let line of this.delauneyLines) {
                 if (this.gabrielLines.indexOf(line) === -1) {
-                    line.draw(ctx, this.scale);
+                    line.drawLine(ctx, this.scale);
                 }
             }
             ctx.globalAlpha = 1;
@@ -744,14 +744,14 @@ export class Dungeon extends Graph<Node, Link> {
             ctx.lineWidth = 1;
             ctx.strokeStyle = '#000';
             for (let line of this.lines) {
-                line.draw(ctx, this.scale);
+                line.drawLine(ctx, this.scale);
             }
         }
 
         if (this.nodeAlpha > 0) {
             ctx.globalAlpha = this.nodeAlpha;
             for (let i = 0; i < this.nodes.length; i++) {
-                this.nodes[i].draw(ctx, this.scale);
+                this.nodes[i].drawNode(ctx, this.scale);
             }
             ctx.globalAlpha = 1;
         }
