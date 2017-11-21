@@ -417,37 +417,32 @@ export class Dungeon extends Graph<Node, Link> {
     }
     
     private async detectWalls() {
-        for (let depth = 0; depth <= 5; depth++) {
-            for (let x = 0; x < this.width; x++) {
-                for (let y = 0; y < this.height; y++) {
-                    let tile = this.grid[x][y];
-                    if (tile.isFloor || (tile.wallDepth !== undefined && tile.wallDepth < depth)) {
-                        continue;
-                    }
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                let tile = this.grid[x][y];
+                if (tile.isFloor) {
+                    continue;
+                }
 
-                    let toTest = this.getAdjacent(tile);
-                    for (let test of toTest) {
-                        if (test.isFloor) {
-                            tile.wallDepth = 0;
-                            
-                            if (this.animated) {
-                                this.redraw();
-                                await this.delay(2);
-                            }
-
-                            break;
-                        } else if (test.wallDepth === depth - 1) {
-                            tile.wallDepth = depth;
-                            break;
+                let toTest = this.getAdjacent(tile);
+                for (let test of toTest) {
+                    if (test.isFloor) {
+                        tile.isWall = true;
+                        
+                        if (this.animated) {
+                            this.redraw();
+                            await this.delay(2);
                         }
+
+                        break;
                     }
                 }
             }
+        }
 
-            if (this.animated) {
-                this.redraw();
-                await this.delay(500);
-            }
+        if (this.animated) {
+            this.redraw();
+            await this.delay(500);
         }
     }
     
@@ -459,7 +454,7 @@ export class Dungeon extends Graph<Node, Link> {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 let tile = this.grid[x][y];
-                if (tile.wallDepth === 0 && !tile.isFloor) {
+                if (tile.isWall && !tile.isFloor) {
                     await this.generateWallCurve(tile);
                     
                     if (this.animated) {
@@ -486,15 +481,15 @@ export class Dungeon extends Graph<Node, Link> {
         firstTile.isFloor = true;
 
         // Pick next tile, keep looping. When there isn't a next one, stop.
-        let tile = this.pickBestAdjacentWallTile(firstTile, t => !t.isFloor && t.wallDepth === 0);
+        let tile = this.pickBestAdjacentWallTile(firstTile, t => !t.isFloor && t.isWall);
         if (tile === undefined) {
             // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
-            tile = this.pickBestAdjacentWallTile(firstTile, t => t.wallDepth === 0);
+            tile = this.pickBestAdjacentWallTile(firstTile, t => t.isWall);
         }
 
         //let lastTile = firstTile;
         
-        //let addKeyPoint = true;
+        let isDeadEnd = false;
         let prevTile = firstTile;
         while (tile !== undefined) {
             //lastTile = tile;
@@ -518,14 +513,15 @@ export class Dungeon extends Graph<Node, Link> {
             }
             
             if (tile.isFloor) {
+                isDeadEnd = curve.keyPoints.indexOf(tile) !== curve.keyPoints.length - 1;
                 break; // intersected a(nother) curve, so end this one
             }
             tile.isFloor = true;
             
-            let next = this.pickBestAdjacentWallTile(tile, t => !t.isFloor && t.wallDepth === 0 && t !== prevTile);
+            let next = this.pickBestAdjacentWallTile(tile, t => !t.isFloor && t.isWall && t !== prevTile);
             if (next === undefined) {
                 // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
-                next = this.pickBestAdjacentWallTile(tile, t => t.wallDepth === 0 && t !== prevTile);
+                next = this.pickBestAdjacentWallTile(tile, t => t.isWall && t !== prevTile);
             }
             prevTile = tile;
             tile = next;
@@ -536,8 +532,17 @@ export class Dungeon extends Graph<Node, Link> {
                 await this.delay(10);
             }
         }
+        if (tile === undefined) {
+            isDeadEnd = true;
+        }
 
-        await this.backtrackAndBranch(curve, tile === undefined);
+        if (this.animated) {
+            curve.updateRenderPoints();
+            this.redraw();
+            await this.delay(10);
+        }
+
+        await this.backtrackAndBranch(curve, isDeadEnd);
 
         curve.updateRenderPoints();
         return curve;
@@ -549,7 +554,7 @@ export class Dungeon extends Graph<Node, Link> {
             let curveTile = curve.keyPoints[i];
 
             // if there's an adjacent tile a wall can start from, generate a new curve, then call this method on it again
-            let viableTile = this.pickBestAdjacentWallTile(curveTile as Tile, t => !t.isFloor && t.wallDepth === 0);
+            let viableTile = this.pickBestAdjacentWallTile(curveTile as Tile, t => !t.isFloor && t.isWall);
             if (viableTile !== undefined) {
                 let newCurve = await this.generateWallCurve(curveTile as Tile);
                 
@@ -562,12 +567,17 @@ export class Dungeon extends Graph<Node, Link> {
                     // chop off the dead end from the initial curve, and graft the new curve on.
                     // then have the chopped-off dead end be the new curve instead
                     let newBranch = newCurve.keyPoints.slice(1);
-
                     let deadEnd = curve.keyPoints.splice(i + 1)
                     deadEnd.unshift(curveTile);
-                    newCurve.keyPoints = deadEnd;
 
+                    newCurve.keyPoints = deadEnd;
                     curve.keyPoints = curve.keyPoints.concat(newBranch);
+                    
+                    if (curve.keyPoints[0] === curve.keyPoints[curve.keyPoints.length - 1]) {
+                        curve.isLoop = true;
+                        isDeadEnd = false;
+                    }
+
                     curve.updateRenderPoints();
                     newCurve.updateRenderPoints();
                 }
@@ -632,7 +642,7 @@ export class Dungeon extends Graph<Node, Link> {
             let allAdjacent = this.getAdjacent(tile, true);
 
             for (let adjacent of allAdjacent) {
-                if (adjacent.wallDepth === undefined) {
+                if (adjacent.isFloor && !adjacent.isWall) {
                     numAdjacentFloorTiles ++;
                 }
             }
@@ -699,12 +709,7 @@ export class Dungeon extends Graph<Node, Link> {
             for (let curve of this.walls) {
                 curve.draw(ctx, this.scale, this.scale, false);
             }
-            ctx.clip();
-
-            // TODO: when two paths meet start-to-start or end-to-end, one needs to be reversed.
-            // They can even combine into one path, maybe.
-            // But how to handle meetings with non-ends?
-            // "hole" paths  need to ensure they go in the same direction (clockwise?) as containing ones.
+            ctx.clip('evenodd');
 
             ctx.fillStyle = '#666';
             ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
