@@ -715,11 +715,16 @@ export class Dungeon extends Graph<Node, Link> {
             ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
 
 			ctx.strokeStyle = '#000';
-			ctx.lineWidth = this.scale * 0.2;
-			let vmax = Math.max(this.width, this.height) * this.scale;
-			for (let i = vmax * 2; i >= 0; i -= this.scale * 0.75) {
+			ctx.lineWidth = this.scale * 0.1;
+            let vmax = Math.max(this.width, this.height) * this.scale;
+            let width = this.width * this.scale;
+            let iMax = vmax * 2;
+			for (let i = iMax; i >= 0; i -= this.scale * 0.75) {
 				ctx.moveTo(0, i);
-				ctx.lineTo(i, 0);
+                ctx.lineTo(i, 0);
+                
+                ctx.moveTo(width, iMax - i);
+                ctx.lineTo(i - vmax, 0);
 			}
 			ctx.stroke();
 
