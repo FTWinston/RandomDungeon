@@ -146,11 +146,13 @@ export class Dungeon extends Graph<Room, Pathway> {
             await this.delay(1500);
         }
 
-        let node1 = new Room(this, 0, 0);
-        let node2 = new Room(this, 999999, 0);
-        let node3 = new Room(this, 0, 999999);
+        let enclosingTriangle: [Room, Room, Room] = [
+            new Room(this, 0, 0),
+            new Room(this, 999999, 0),
+            new Room(this, 0, 999999),
+        ];
 
-        this.delauneyLines = this.computeDelauneyTriangulation([node1, node2, node3], (from, to) => new Pathway(from, to));
+        this.delauneyLines = this.computeDelauneyTriangulation(enclosingTriangle, (from, to) => new Pathway(from, to));
         
         if (this.animated) {
             this.redraw();
@@ -553,7 +555,7 @@ export class Dungeon extends Graph<Room, Pathway> {
         for (let i = curve.keyPoints.length - 1; i >= 0; i--) {
             let curveTile = curve.keyPoints[i];
 
-            // if there's an adjacent tile a wall can start from, generate a new curve, then call this method on it again
+            // if there's an adjacent tile a wall can start from, generate a new curve and call this method on it again
             let viableTile = this.pickBestAdjacentWallTile(curveTile as Tile, t => !t.isFloor && t.isWall);
             if (viableTile !== undefined) {
                 let newCurve = await this.generateWallCurve(curveTile as Tile);
@@ -567,7 +569,7 @@ export class Dungeon extends Graph<Room, Pathway> {
                     // chop off the dead end from the initial curve, and graft the new curve on.
                     // then have the chopped-off dead end be the new curve instead
                     let newBranch = newCurve.keyPoints.slice(1);
-                    let deadEnd = curve.keyPoints.splice(i + 1)
+                    let deadEnd = curve.keyPoints.splice(i + 1);
                     deadEnd.unshift(curveTile);
 
                     newCurve.keyPoints = deadEnd;
@@ -714,19 +716,19 @@ export class Dungeon extends Graph<Room, Pathway> {
             ctx.fillStyle = '#fff';
             ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
 
-			ctx.strokeStyle = '#000';
-			ctx.lineWidth = this.scale * 0.1;
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = this.scale * 0.1;
             let vmax = Math.max(this.width, this.height) * this.scale;
             let width = this.width * this.scale;
             let iMax = vmax * 2;
-			for (let i = iMax; i >= 0; i -= this.scale * 0.75) {
-				ctx.moveTo(0, i);
+            for (let i = iMax; i >= 0; i -= this.scale * 0.75) {
+                ctx.moveTo(0, i);
                 ctx.lineTo(i, 0);
                 
                 ctx.moveTo(width, iMax - i);
                 ctx.lineTo(i - vmax, 0);
-			}
-			ctx.stroke();
+            }
+            ctx.stroke();
 
             ctx.restore();
         }
