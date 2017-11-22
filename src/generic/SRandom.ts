@@ -45,7 +45,7 @@ export class SRandom {
         return min + this.next() * (max - min);
     }
 
-    randomIntRange(minInclusive: number, maxExclusive: number) {
+    nextIntInRange(minInclusive: number, maxExclusive: number) {
         return Math.floor(this.nextInRange(minInclusive, maxExclusive));
     }
 

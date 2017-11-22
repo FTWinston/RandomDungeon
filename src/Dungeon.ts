@@ -1,6 +1,6 @@
 import { SRandom } from './generic/SRandom';
 import { Pathway } from './Pathway';
-import { Room } from './Room';
+import { Room, RoomType } from './Room';
 import { Tile } from './Tile';
 import { Graph } from './generic/Graph';
 import { Curve } from './generic/Curve';
@@ -104,7 +104,7 @@ export class Dungeon extends Graph<Room, Pathway> {
         let makeNode = () => {
             let x = random.nextInRange(2, this.width - 2);
             let y = random.nextInRange(2, this.height - 2);
-            return new Room(this, x, y, 1);
+            return new Room(this, x, y, random.nextIntInRange(0, RoomType.NUM_VALUES));
         };
         let getScaledDistSq = (node1: Room, node2: Room) => {
             let dxScaled = (node1.x - node2.x) / this.width;
@@ -147,9 +147,9 @@ export class Dungeon extends Graph<Room, Pathway> {
         }
 
         let enclosingTriangle: [Room, Room, Room] = [
-            new Room(this, 0, 0),
-            new Room(this, 999999, 0),
-            new Room(this, 0, 999999),
+            new Room(this, 0, 0, RoomType.Artificial),
+            new Room(this, 999999, 0, RoomType.Artificial),
+            new Room(this, 0, 999999, RoomType.Artificial),
         ];
 
         this.delauneyLines = this.computeDelauneyTriangulation(enclosingTriangle, (from, to) => new Pathway(from, to));
@@ -211,7 +211,7 @@ export class Dungeon extends Graph<Room, Pathway> {
         let numToSelect = Math.round(selectingFrom.length * selectFraction);
 
         for (let i = numToSelect; i > 0; i--) {
-            let selectedLink = selectingFrom.splice(random.randomIntRange(0, selectingFrom.length), 1)[0];
+            let selectedLink = selectingFrom.splice(random.nextIntInRange(0, selectingFrom.length), 1)[0];
             this.lines.push(selectedLink);
         }
 
@@ -333,7 +333,7 @@ export class Dungeon extends Graph<Room, Pathway> {
 
             let minX: number, minY: number, maxX: number, maxY: number;
 
-            switch (random.randomIntRange(0, 6)) {
+            switch (random.nextIntInRange(0, 6)) {
                 case 0:
                     // junction
                     minX = nodeX - 1; maxX = nodeX + 1;
@@ -342,36 +342,36 @@ export class Dungeon extends Graph<Room, Pathway> {
                 case 1:
                 case 2: {
                     // small room
-                    let halfWidth = random.randomIntRange(1, 4);
-                    let halfHeight = random.randomIntRange(1, 4);
+                    let halfWidth = random.nextIntInRange(1, 4);
+                    let halfHeight = random.nextIntInRange(1, 4);
                     minX = nodeX - halfWidth; maxX = nodeX + halfWidth;
                     minY = nodeY - halfHeight; maxY = nodeY + halfHeight;
                     break;
                 }
                 case 3: {
                     // large room
-                    let halfWidth = random.randomIntRange(3, 8);
-                    let halfHeight = random.randomIntRange(3, 8);
-                    let xOffset = random.randomIntRange(-3, 4);
-                    let yOffset = random.randomIntRange(-3, 4);
+                    let halfWidth = random.nextIntInRange(3, 8);
+                    let halfHeight = random.nextIntInRange(3, 8);
+                    let xOffset = random.nextIntInRange(-3, 4);
+                    let yOffset = random.nextIntInRange(-3, 4);
                     minX = nodeX - halfWidth + xOffset; maxX = nodeX + halfWidth + xOffset;
                     minY = nodeY - halfHeight + yOffset; maxY = nodeY + halfHeight + yOffset;
                     break;
                 }
                 case 4: {
                     // long room
-                    let halfWidth = random.randomIntRange(7, 12);
-                    let halfHeight = random.randomIntRange(2, 5);
-                    let xOffset = random.randomIntRange(-6, 7);
+                    let halfWidth = random.nextIntInRange(7, 12);
+                    let halfHeight = random.nextIntInRange(2, 5);
+                    let xOffset = random.nextIntInRange(-6, 7);
                     minX = nodeX - halfWidth + xOffset; maxX = nodeX + halfWidth + xOffset;
                     minY = nodeY - halfHeight; maxY = nodeY + halfHeight;
                     break;
                 }
                 case 5: {
                     // tall room
-                    let halfWidth = random.randomIntRange(2, 5);
-                    let halfHeight = random.randomIntRange(7, 12);
-                    let yOffset = random.randomIntRange(-6, 7);
+                    let halfWidth = random.nextIntInRange(2, 5);
+                    let halfHeight = random.nextIntInRange(7, 12);
+                    let yOffset = random.nextIntInRange(-6, 7);
                     minX = nodeX - halfWidth; maxX = nodeX + halfWidth;
                     minY = nodeY - halfHeight + yOffset; maxY = nodeY + halfHeight + yOffset;
                     break;
@@ -426,9 +426,29 @@ export class Dungeon extends Graph<Room, Pathway> {
                     continue;
                 }
 
-                let toTest = this.getAdjacent(tile);
+                let toTest = this.getAdjacent(tile, true, false);
                 for (let test of toTest) {
                     if (test.isFloor) {
+                        tile.isWall = true;
+                        
+                        if (this.animated) {
+                            this.redraw();
+                            await this.delay(2);
+                        }
+
+                        break;
+                    }
+                }
+
+                if (tile.isFloor) {
+                    continue;
+                }
+
+                // artificial rooms should have "corner" wall nodes filled in
+                // TODO: wall curves still "cut the corner" and then a new loop is added to fill the cut corner in. That needs to change if these go in.
+                toTest = this.getAdjacent(tile, false, true);
+                for (let test of toTest) {
+                    if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {
                         tile.isWall = true;
                         
                         if (this.animated) {
@@ -592,20 +612,22 @@ export class Dungeon extends Graph<Room, Pathway> {
         }
     }
 
-    private getAdjacent(from: Tile, diagonal: boolean = false) {
+    private getAdjacent(from: Tile, orthogonal: boolean = true, diagonal: boolean = false) {
         let results = [];
 
-        if (from.x > 0) {
-            results.push(this.grid[from.x - 1][from.y]);
-        }
-        if (from.x < this.width - 1) {
-            results.push(this.grid[from.x + 1][from.y]);
-        }
-        if (from.y > 0) {
-            results.push(this.grid[from.x][from.y - 1]);
-        }
-        if (from.y < this.height - 1) {
-            results.push(this.grid[from.x][from.y + 1]);
+        if (orthogonal) {
+            if (from.x > 0) {
+                results.push(this.grid[from.x - 1][from.y]);
+            }
+            if (from.x < this.width - 1) {
+                results.push(this.grid[from.x + 1][from.y]);
+            }
+            if (from.y > 0) {
+                results.push(this.grid[from.x][from.y - 1]);
+            }
+            if (from.y < this.height - 1) {
+                results.push(this.grid[from.x][from.y + 1]);
+            }
         }
         
         if (diagonal) {
@@ -634,14 +656,14 @@ export class Dungeon extends Graph<Room, Pathway> {
         let bestTile = undefined;
         let bestNumAdjacentFloorTiles = 0;
 
-        let toTest = this.getAdjacent(from, true);
+        let toTest = this.getAdjacent(from, true, true);
         for (let tile of toTest) {
             if (!filter(tile)) {
                 continue;
             }
 
             let numAdjacentFloorTiles = 0;
-            let allAdjacent = this.getAdjacent(tile, true);
+            let allAdjacent = this.getAdjacent(tile, true, true);
 
             for (let adjacent of allAdjacent) {
                 if (adjacent.isFloor && !adjacent.isWall) {
