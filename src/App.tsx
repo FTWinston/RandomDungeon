@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Menu, NumericProperty } from './Menu';
 import { FixedCanvas } from './generic/Canvas';
 import { Dungeon, GenerationSteps } from './Dungeon';
 import './App.css';
@@ -33,76 +34,18 @@ class App extends React.Component<{}, State> {
     render() {
         return (
             <div className="App">
-                    <div className="menu">
-                        <label>Width
-                            <input
-                                type="range"
-                                min="20"
-                                max="200"
-                                value={this.state.cellsWide}
-                                onChange={e => this.setState({ cellsWide: parseInt(e.target.value, 10) })}
-                                disabled={this.state.animating}
-                            />
-                        </label>
+                <Menu
+                    disabled={this.state.animating}
+                    cellsWide={this.state.cellsWide}
+                    cellsHigh={this.state.cellsHigh}
+                    cellSize={this.state.cellSize}
+                    nodeCount={this.state.nodeCount}
+                    connectivity={this.state.connectivity}
+                    setNumber={(p, v) => this.setParameter(p, v)}
 
-                        <label>Height
-                            <input
-                                type="range"
-                                min="20"
-                                max="200"
-                                value={this.state.cellsHigh}
-                                onChange={e => this.setState({ cellsHigh: parseInt(e.target.value, 10) })}
-                                disabled={this.state.animating}
-                            />
-                        </label>
-
-                        <label>Scale
-                            <input
-                                type="range"
-                                min="2"
-                                max="50"
-                                value={this.state.cellSize}
-                                onChange={e => this.setState({ cellSize: parseInt(e.target.value, 10) })}
-                                disabled={this.state.animating}
-                            />
-                        </label>
-
-                        <label>Node count
-                            <input
-                                type="range"
-                                min="2"
-                                max="100"
-                                value={this.state.nodeCount}
-                                onChange={e => this.setState({ nodeCount: parseInt(e.target.value, 10) })}
-                                disabled={this.state.animating}
-                            />
-                        </label>
-
-                        <label>Connectivity
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={this.state.connectivity}
-                                onChange={e => this.setState({ connectivity: parseInt(e.target.value, 10) })}
-                                disabled={this.state.animating}
-                            />
-                        </label>
-
-                        <input
-                            type="button"
-                            onClick={() => this.createDungeon(true)}
-                            value="Generate slowly"
-                            disabled={this.state.animating}
-                        />
-                        <input
-                            type="button"
-                            onClick={() => this.createDungeon(false)}
-                            value="Generate quickly"
-                            disabled={this.state.animating}
-                        />
-                    </div>
-
+                    seed={this.state.dungeon === undefined ? undefined : this.state.dungeon.seed}
+                    generate={(a) => this.createDungeon(a)}
+                />
                 <FixedCanvas
                     className="dungeonDisplay"
                     width={this.state.cellSize * this.state.cellsWide}
@@ -151,6 +94,36 @@ class App extends React.Component<{}, State> {
 
         if (regenerateFrom !== undefined) {
             dungeon.generate(regenerateFrom);
+        }
+    }
+
+    private setParameter(property: NumericProperty, value: number) {
+        switch (property) {
+            case NumericProperty.CellsWide:
+                this.setState({
+                    cellsWide: value,
+                });
+                break;
+            case NumericProperty.CellsHigh:
+                this.setState({
+                    cellsHigh: value,
+                });
+                break;
+            case NumericProperty.CellSize:
+                this.setState({
+                    cellSize: value,
+                });
+                break;
+            case NumericProperty.NodeCount:
+                this.setState({
+                    nodeCount: value,
+                });
+                break;
+            case NumericProperty.Connectivity:
+                this.setState({
+                    connectivity: value,
+                });
+                break;
         }
     }
 

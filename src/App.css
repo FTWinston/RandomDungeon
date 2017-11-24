@@ -12,14 +12,6 @@
   right: 0;
 }
 
-.menu {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	background-color: lightgray;
-	flex-shrink: 0;
-}
-
 .dungeonDisplay {
 	background-color: #ccc;
 	flex-grow: 1;
