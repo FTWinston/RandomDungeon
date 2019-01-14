@@ -159,6 +159,7 @@ export class DungeonDrawer {
             ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
             ctx.lineCap = 'round';
             for (let curve of dungeon.walls) {
+                ctx.strokeStyle = ctx.fillStyle = curve.color;
                 this.drawCurve(curve, ctx, this.scale, this.scale);
             }
             ctx.lineCap = 'butt';
