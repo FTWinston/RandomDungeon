@@ -14,11 +14,4 @@ export class Pathway extends Line<Room> {
         from.links.push(this);
         to.links.push(this);
     }
-
-    drawLine(ctx: CanvasRenderingContext2D, scale: number) {
-        ctx.beginPath();
-        ctx.moveTo(this.from.x * scale, this.from.y * scale);
-        ctx.lineTo(this.to.x * scale, this.to.y * scale);
-        ctx.stroke();
-    }
 }

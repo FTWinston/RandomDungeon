@@ -1,8 +1,11 @@
 import * as React from 'react';
 import { Menu, NumericProperty } from './Menu';
-import { FixedCanvas } from './generic/Canvas';
-import { Dungeon, GenerationSteps } from './Dungeon';
+import { FixedCanvas } from './Canvas';
+import { Dungeon } from '../model/Dungeon';
 import './App.css';
+import { DungeonDrawer } from '../drawing/DungeonDrawer';
+import { DungeonGenerator } from '../generation/DungeonGenerator';
+import { GenerationSteps } from '../generation/GenerationSteps';
 
 interface State {
     dungeon?: Dungeon;
@@ -17,6 +20,8 @@ interface State {
 
 class App extends React.Component<{}, State> {
     private canvas: FixedCanvas;
+    private drawer: DungeonDrawer;
+    private generator: DungeonGenerator;
 
     constructor(props: {}) {
         super(props);
@@ -57,11 +62,22 @@ class App extends React.Component<{}, State> {
     }
 
     componentDidMount() {
+        this.drawer = new DungeonDrawer(this.canvas.ctx, this.state.cellSize);
+
+        const redraw = () => this.drawer.redraw();
+
+        const stepReached = (
+            step: GenerationSteps,
+            startOfStep: boolean
+        ) => this.drawer.setAnimationStage(step, startOfStep);
+
+        this.generator = new DungeonGenerator(this.state.animating, stepReached, redraw);
+        
         this.createDungeon(false);
     }
 
     componentDidUpdate(prevProps: {}, prevState: State) {
-        let dungeon = this.state.dungeon;
+        const dungeon = this.state.dungeon;
         if (dungeon === undefined) {
             return;
         }
@@ -78,8 +94,12 @@ class App extends React.Component<{}, State> {
         }
 
         if (prevState.cellSize !== this.state.cellSize) {
-            dungeon.scale = this.state.cellSize;
+            this.drawer.scale = this.state.cellSize;
             regenerateFrom = GenerationSteps.Render;
+        }
+
+        if (prevState.animating !== this.state.animating) {
+            this.generator.animated = this.state.animating;
         }
 
         if (prevState.nodeCount !== this.state.nodeCount) {
@@ -93,7 +113,7 @@ class App extends React.Component<{}, State> {
         }
 
         if (regenerateFrom !== undefined) {
-            dungeon.generate(regenerateFrom);
+            this.generator.generate(dungeon, regenerateFrom);
         }
     }
 
@@ -124,20 +144,30 @@ class App extends React.Component<{}, State> {
                     connectivity: value,
                 });
                 break;
+            default:
+                break;
         }
     }
 
     private async createDungeon(animate: boolean) {
-        let dungeon = new Dungeon(animate, this.canvas.ctx, this.state.nodeCount,
-                                  this.state.cellsWide, this.state.cellsHigh, this.state.cellSize,
-                                  this.state.connectivity);
+        this.generator.animated = animate;
+        this.drawer.scale = this.state.cellSize;
+
+        const dungeon = new Dungeon(
+            this.state.nodeCount,
+            this.state.cellsWide,
+            this.state.cellsHigh,
+            this.state.connectivity
+        );
+
+        this.drawer.dungeon = dungeon;
 
         this.setState({
             dungeon: dungeon,
             animating: animate,
         });
 
-        await dungeon.generate();
+        await this.generator.generate(dungeon);
         
         this.setState({
             animating: false,

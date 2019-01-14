@@ -5,49 +5,11 @@ export class Curve {
 
     keyPoints: Coord2D[];
     isLoop: boolean;
-    private renderPoints: number[];
+    renderPoints: number[];
 
     constructor(public curvature: number = 0.75) {
         this.keyPoints = [];
         this.isLoop = false;
-    }
-
-    draw(ctx: CanvasRenderingContext2D, scale: number, width: number, newPath: boolean = true) {
-        let halfScale = scale / 2;
-
-        if (this.keyPoints.length === 1) {
-            if (newPath) {
-                let cell = this.keyPoints[0];
-                let cx = cell.x * scale + halfScale;
-                let cy = cell.y * scale + halfScale;
-
-                ctx.beginPath();
-                ctx.arc(cx, cy, width / 2, 0, Math.PI * 2);
-            
-                ctx.fill();
-            }
-            return;
-        }
-        
-        let points = this.renderPoints;
-        let x = points[0] * scale + halfScale;
-        let y = points[1] * scale + halfScale;
-        
-        if (newPath) {
-            ctx.beginPath();
-        }
-        ctx.moveTo(x, y);
-        
-        ctx.lineWidth = width;
-        for (let i = 0; i < points.length; i += 2) {
-            x = points[i] * scale + halfScale;
-            y = points[i + 1] * scale + halfScale;
-            ctx.lineTo(x, y);
-        }
-
-        if (newPath) {
-            ctx.stroke();
-        }
     }
 
     updateRenderPoints() {

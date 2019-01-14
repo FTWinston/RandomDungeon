@@ -48,7 +48,8 @@ export class Menu extends React.Component<Props, State> {
 
         switch (this.state.show) {
             case SubMenu.Generate:
-                currentMenu = <GenerateMenu
+                currentMenu = (
+                <GenerateMenu
                     disabled={this.props.disabled}
                     cellsWide={this.props.cellsWide}
                     cellsHigh={this.props.cellsHigh}
@@ -58,11 +59,16 @@ export class Menu extends React.Component<Props, State> {
                     setNumber={this.props.setNumber}
                     seed={this.props.seed}
                     generate={this.props.generate}
-                />;
+                />
+                );
                 break;
+            /*
             case SubMenu.Customize:
                 break;
             case SubMenu.Use:
+                break;
+            */
+            default:
                 break;
         }
 
