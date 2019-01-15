@@ -412,12 +412,6 @@ export class DungeonGenerator {
                 for (let test of toTest) {
                     if (test.isFloor) {
                         tile.isWall = true;
-                        
-                        if (this.animated) {
-                            this.redraw();
-                            await this.delay(2);
-                        }
-
                         break;
                     }
                 }
@@ -433,15 +427,14 @@ export class DungeonGenerator {
                 for (let test of toTest) {
                     if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {
                         tile.isWall = true;
-                        
-                        if (this.animated) {
-                            this.redraw();
-                            await this.delay(2);
-                        }
-
                         break;
                     }
                 }
+            }
+            
+            if (this.animated) {
+                this.redraw();
+                await this.delay(50);
             }
         }
 
@@ -485,11 +478,20 @@ export class DungeonGenerator {
         curve.keyPoints.push(firstTile);
         firstTile.isFloor = true;
 
-        // Pick next tile, keep looping. When there isn't a next one, stop.
-        let tile = this.pickBestAdjacentWallTile(dungeon, firstTile, t => !t.isFloor && t.isWall);
+        // Pick next tile, keep looping. When there isn't a next one, stop. Initially, only look orthogonally.
+        let tile = this.pickBestAdjacentWallTileOrthogonalThenDiagonal(
+            dungeon,
+            firstTile,
+            t => !t.isFloor && t.isWall
+        );
+
         if (tile === undefined) {
-            // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
-            tile = this.pickBestAdjacentWallTile(dungeon, firstTile, t => t.isWall);
+            // Do the same check agains, but don't ignore tiles that are part of walls. This will be the last one.
+            tile = this.pickBestAdjacentWallTileOrthogonalThenDiagonal(
+                dungeon,
+                firstTile,
+                t => t.isWall
+            );
         }
 
         // let lastTile = firstTile;
@@ -523,10 +525,18 @@ export class DungeonGenerator {
             }
             tile.isFloor = true;
             
-            let next = this.pickBestAdjacentWallTile(dungeon, tile, t => !t.isFloor && t.isWall && t !== prevTile);
+            let next = this.pickBestAdjacentWallTileOrthogonalThenDiagonal(
+                dungeon,
+                tile,
+                t => !t.isFloor && t.isWall && t !== prevTile
+            );
             if (next === undefined) {
                 // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
-                next = this.pickBestAdjacentWallTile(dungeon, tile, t => t.isWall && t !== prevTile);
+                next = this.pickBestAdjacentWallTileOrthogonalThenDiagonal(
+                    dungeon,
+                    tile,
+                    t => t.isWall && t !== prevTile
+                );
             }
             prevTile = tile;
             tile = next;
@@ -559,7 +569,7 @@ export class DungeonGenerator {
             let curveTile = curve.keyPoints[i];
 
             // if there's an adjacent tile a wall can start from, generate a new curve and call this method on it again
-            let viableTile = this.pickBestAdjacentWallTile(dungeon, curveTile as Tile, t => !t.isFloor && t.isWall);
+            let viableTile = this.pickBestAdjacentWallTile(dungeon, curveTile as Tile, true, true, t => !t.isFloor && t.isWall);
             if (viableTile !== undefined) {
                 let newCurve = await this.generateWallCurve(dungeon, curveTile as Tile);
                 
@@ -635,11 +645,28 @@ export class DungeonGenerator {
         return results;
     }
 
-    private pickBestAdjacentWallTile(dungeon: Dungeon, from: Tile, filter: (tile: Tile) => boolean) {
+    private pickBestAdjacentWallTileOrthogonalThenDiagonal(
+        dungeon: Dungeon,
+        from: Tile,
+        filter: (tile: Tile) => boolean
+    ) {
+        const ortho = this.pickBestAdjacentWallTile(dungeon, from, true, false, filter);
+        return ortho !== undefined
+            ? ortho
+            : this.pickBestAdjacentWallTile(dungeon, from, false, true, filter);
+    }
+
+    private pickBestAdjacentWallTile(
+        dungeon: Dungeon,
+        from: Tile,
+        orthogonal: boolean,
+        diagonal: boolean,
+        filter: (tile: Tile) => boolean
+    ) {
         let bestTile = undefined;
         let bestNumAdjacentFloorTiles = 0;
 
-        let toTest = this.getAdjacent(dungeon, from, true, true);
+        let toTest = this.getAdjacent(dungeon, from, orthogonal, diagonal);
         for (let tile of toTest) {
             if (!filter(tile)) {
                 continue;
