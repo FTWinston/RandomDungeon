@@ -566,12 +566,12 @@ export class DungeonGenerator {
     private async backtrackAndBranch(dungeon: Dungeon, curve: Curve, isDeadEnd: boolean) {
         // iterate backwards round this curve, trying to find somewhere to branch off a new curve from
         for (let i = curve.keyPoints.length - 1; i >= 0; i--) {
-            let curveTile = curve.keyPoints[i];
+            let curveTile = curve.keyPoints[i] as Tile;
 
             // if there's an adjacent tile a wall can start from, generate a new curve and call this method on it again
-            let viableTile = this.pickBestAdjacentWallTile(dungeon, curveTile as Tile, true, true, t => !t.isFloor && t.isWall);
+            let viableTile = this.pickBestAdjacentWallTile(dungeon, curveTile, true, true, t => !t.isFloor && t.isWall);
             if (viableTile !== undefined) {
-                let newCurve = await this.generateWallCurve(dungeon, curveTile as Tile);
+                let newCurve = await this.generateWallCurve(dungeon, curveTile);
                 
                 if (isDeadEnd) {
                     if (this.animated) {

@@ -159,7 +159,6 @@ export class DungeonDrawer {
             ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
             ctx.lineCap = 'round';
             for (let curve of dungeon.walls) {
-                ctx.strokeStyle = ctx.fillStyle = curve.color;
                 this.drawCurve(curve, ctx, this.scale, this.scale);
             }
             ctx.lineCap = 'butt';
@@ -202,10 +201,6 @@ export class DungeonDrawer {
             ctx.fillStyle = '#000';
             ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
         } else if (tile.isFloor) {
-            if (tile.room !== null) {
-                ctx.fillStyle = tile.room.color;
-                ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
-            }
             ctx.strokeStyle = 'rgba(200,200,200,0.5)';
             ctx.strokeRect(tile.x * scale, tile.y * scale, scale, scale);
         } else {
