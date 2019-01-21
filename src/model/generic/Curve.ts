@@ -1,4 +1,5 @@
 import { Coord2D } from './Coord';
+import { randomColor } from '../../generation/randomColor';
 
 export class Curve {
     static readonly stepsPerSegment = 16;
@@ -6,10 +7,12 @@ export class Curve {
     keyPoints: Coord2D[];
     isLoop: boolean;
     renderPoints: number[];
+    color: string;
 
     constructor(public curvature: number = 0.75) {
         this.keyPoints = [];
         this.isLoop = false;
+        this.color = randomColor();
     }
 
     updateRenderPoints() {
