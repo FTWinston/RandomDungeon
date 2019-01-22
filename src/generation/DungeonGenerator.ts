@@ -9,8 +9,14 @@ import {
     computeDelauneyTriangulation,
     computeGabrielGraph,
     computeRelativeNeighbourhoodGraph,
-    computeMinimumSpanningTree
+    computeMinimumSpanningTree,
+    getUniqueLines
 } from './graph';
+import { Coord2D } from '../model/generic/Coord';
+import { Graph } from '../model/generic/Graph';
+import { Line } from '../model/generic/Line';
+import { computeVoronoiCells } from './graph/voronoi';
+import { Polygon } from '../model/generic/Polygon';
 
 export class DungeonGenerator {
     constructor(
@@ -56,6 +62,11 @@ export class DungeonGenerator {
             await this.generateWallCurves(dungeon);
         }
 
+        const backdropSeed = seedGenerator.next();
+        if (startStep <= GenerationSteps.FillBackdrop) {
+            await this.generateBackdrop(dungeon, backdropSeed);
+        }
+
         this.stepReached(GenerationSteps.Render, true);
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
@@ -77,11 +88,6 @@ export class DungeonGenerator {
             let y = random.nextInRange(2, dungeon.height - 2);
             return new Room(dungeon, x, y, random.nextIntInRange(0, RoomType.NUM_VALUES));
         };
-        let getScaledDistSq = (node1: Room, node2: Room) => {
-            let dxScaled = (node1.x - node2.x) / dungeon.width;
-            let dyScaled = (node1.y - node2.y) / dungeon.height;
-            return dxScaled * dxScaled + dyScaled * dyScaled;
-        };
 
         dungeon.nodes = [];
         for (let i = 0; i < dungeon.nodeCount; i++) {
@@ -90,19 +96,34 @@ export class DungeonGenerator {
                 await this.delay(100);
             }
 
-            // create two nodes, and go with the one that's furthest away from the nearest node
-            let node1 = makeNode(), node2 = makeNode();
-            let closestDist1 = Number.MAX_VALUE, closestDist2 = Number.MAX_VALUE;
-            for (let node of dungeon.nodes) {
-                // scale x/y distances, so width/height changes don't change which node is chosen during regeneration
-                closestDist1 = Math.min(closestDist1, getScaledDistSq(node1, node));
-                closestDist2 = Math.min(closestDist2, getScaledDistSq(node2, node));
-            }
-
-            dungeon.nodes.push(closestDist1 < closestDist2 ? node2 : node1);
+            this.addSpacedNode(dungeon, makeNode, dungeon.width, dungeon.height);
         }
 
         this.stepReached(GenerationSteps.CreateNodes, false);
+    }
+
+    private addSpacedNode<TNode extends Coord2D, TLine extends Line<TNode>>(
+        dungeon: Graph<TNode, TLine>,
+        makeNode: () => TNode,
+        totWidth: number,
+        totHeight: number
+    ) {
+        const getScaledDistSq = (n1: TNode, n2: TNode, width: number, height: number) => {
+            let dxScaled = (n1.x - n2.x) / width;
+            let dyScaled = (n1.y - n2.y) / height;
+            return dxScaled * dxScaled + dyScaled * dyScaled;
+        };
+
+        // create two nodes, and go with the one that's furthest away from the nearest node
+        let node1 = makeNode(), node2 = makeNode();
+        let closestDist1 = Number.MAX_VALUE, closestDist2 = Number.MAX_VALUE;
+        for (let node of dungeon.nodes) {
+            // scale x/y distances, so width/height changes don't change which node is chosen during regeneration
+            closestDist1 = Math.min(closestDist1, getScaledDistSq(node1, node, totWidth, totHeight));
+            closestDist2 = Math.min(closestDist2, getScaledDistSq(node2, node, totWidth, totHeight));
+        }
+
+        dungeon.nodes.push(closestDist1 < closestDist2 ? node2 : node1);
     }
 
     private async populateLinks(dungeon: Dungeon) {
@@ -119,17 +140,15 @@ export class DungeonGenerator {
             await this.delay(1500);
         }
 
-        let enclosingTriangle: [Room, Room, Room] = [
+        const enclosingTriangle: [Room, Room, Room] = [
             new Room(dungeon, 0, 0, RoomType.Artificial),
             new Room(dungeon, 999999, 0, RoomType.Artificial),
             new Room(dungeon, 0, 999999, RoomType.Artificial),
         ];
 
-        dungeon.delauneyLines = computeDelauneyTriangulation(
-            dungeon,
-            enclosingTriangle,
-            (from, to) => new Pathway(from, to)
-        );
+        const delauneyTriangles = computeDelauneyTriangulation(dungeon, enclosingTriangle);
+
+        dungeon.delauneyLines = getUniqueLines(delauneyTriangles, (from, to) => new Pathway(from, to));
         
         if (this.animated) {
             this.redraw();
@@ -688,5 +707,71 @@ export class DungeonGenerator {
         }
         
         return bestTile;
+    }
+
+    private async generateBackdrop(dungeon: Dungeon, seed: number) {
+        const random = new SRandom(seed);
+        this.stepReached(GenerationSteps.FillBackdrop, true);
+
+        const backdropGraph = new Graph<Coord2D, Line<Coord2D>>();
+
+        // Add all existing wall points to the backdrop graph, before we add random ones
+        const wallPoints: Coord2D[] = [];
+        for (const curve of dungeon.walls) {
+            for (const point of curve.keyPoints) { // TODO: should we use w.renderPoints instead?
+                wallPoints.push(point);
+            }
+        }
+        backdropGraph.nodes = wallPoints.slice();
+
+        let makeNode = () => {
+            let x = random.nextInRange(0, dungeon.width);
+            let y = random.nextInRange(0, dungeon.height);
+            return new Coord2D(x, y);
+        };
+
+        for (let i = 0; i < 1000; i++) {
+            this.addSpacedNode(backdropGraph, makeNode, dungeon.width, dungeon.height);
+        }
+
+        if (this.animated) {
+            // TODO: these nodes should be visible, right?
+            this.redraw();
+            await this.delay(1000);
+        }
+
+        const enclosingTriangle: [Coord2D, Coord2D, Coord2D] = [
+            new Coord2D(0, 0),
+            new Coord2D(999999, 0),
+            new Coord2D(0, 999999),
+        ];
+
+        const delauneyTriangles = computeDelauneyTriangulation(backdropGraph, enclosingTriangle);
+
+        if (this.animated) {
+            // TODO: triangles should be visible
+            this.redraw();
+            await this.delay(1000);
+        }
+
+        const allVoronoiCells = computeVoronoiCells(backdropGraph.nodes, delauneyTriangles) as Polygon<Coord2D>[];
+        /*
+        const edgeVoronoiCells = allVoronoiCells.filter(
+            c => c.vertices.some(v => wallPoints.indexOf(v as Coord2D) !== -1)
+        );
+        */
+        // TODO: filter out cells that are WITHIN the map - we only want those outside
+
+        dungeon.backdropCells = allVoronoiCells; // edgeVoronoiCells;
+
+        if (this.animated) {
+            // TODO: cells should be visible
+            this.redraw();
+            await this.delay(1000);
+        }
+
+        // TODO: determine which voronoi cells to keep!
+
+        this.stepReached(GenerationSteps.FillBackdrop, false);
     }
 }

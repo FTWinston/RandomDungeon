@@ -4,6 +4,7 @@ import { Room } from '../model/Room';
 import { Tile } from '../model/Tile';
 import { GenerationSteps } from '../generation/GenerationSteps';
 import { Curve } from '../model/generic/Curve';
+import { randomColor } from '../generation/randomColor';
 
 export class DungeonDrawer {   
     dungeon: Dungeon;
@@ -61,6 +62,14 @@ export class DungeonDrawer {
                     this.highlightWallCurves = true;
                 } else {
                     this.highlightWallCurves = false;
+                }
+                break;
+            
+            case GenerationSteps.FillBackdrop:
+                if (startOfStep) {
+                    // this.drawBackdropNodes = true;
+                } else {
+                    // this.drawBackdropNodes = false;
                 }
                 break;
 
@@ -126,6 +135,24 @@ export class DungeonDrawer {
         }
         
         if (this.fillOutside) {
+            for (const poly of dungeon.backdropCells) {
+                ctx.fillStyle = randomColor();
+
+                ctx.beginPath();
+
+                const startCell = poly.vertices[0];
+                
+                ctx.moveTo(startCell.x * this.scale, startCell.y * this.scale);
+
+                for (const cell of poly.vertices.slice(1)) {
+                    ctx.lineTo(cell.x * this.scale, cell.y * this.scale);
+                }
+                ctx.lineTo(startCell.x * this.scale, startCell.y * this.scale);
+
+                ctx.fill();
+            }
+
+            /*
             ctx.save();
             ctx.beginPath();
 
@@ -153,6 +180,7 @@ export class DungeonDrawer {
             ctx.stroke();
 
             ctx.restore();
+            */
         }
 
         if (this.drawWalls) {

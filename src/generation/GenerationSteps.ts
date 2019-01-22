@@ -6,5 +6,6 @@ export const enum GenerationSteps {
     ExpandLines,
     DetectWalls,
     CurveWalls,
+    FillBackdrop,
     Render,
 }

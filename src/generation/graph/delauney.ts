@@ -5,11 +5,10 @@ import { Triangle } from '../../model/generic/Triangle';
 
 export function computeDelauneyTriangulation<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
     graph: Graph<TNode, TLine>,
-    superTriangle: [TNode, TNode, TNode],
-    createLine: (from: TNode, to: TNode) => TLine
+    superTriangle: [TNode, TNode, TNode]
 ) {
-    if (graph.nodes.length === 2) {
-        return [createLine(graph.nodes[0], graph.nodes[1])];
+    if (graph.nodes.length < 3) {
+        return [];
     }
 
     // https://en.wikipedia.org/wiki/Bowyer%E2%80%93Watson_algorithm
@@ -82,47 +81,7 @@ export function computeDelauneyTriangulation<TNode extends Coord<TNode>, TLine e
         }
     }
 
-    let links: TLine[] = [];
-
-    // convert triangles to UNIQUE lines
-    for (let triangle of triangulation) {
-        let v0 = triangle.vertices[0], v1 = triangle.vertices[1], v2 = triangle.vertices[2];            
-
-        let firstDuplicate = false, secondDuplicate = false, thirdDuplicate = false;
-        for (let link of links) {
-            if (link.from === v0) {
-                if (link.to === v1) {
-                    firstDuplicate = true;
-                } else if (link.to === v2) {
-                    thirdDuplicate = true;
-                }
-            } else if (link.from === v1) {
-                if (link.to === v0) {
-                    firstDuplicate = true;
-                } else if (link.to === v2) {
-                    secondDuplicate = true;
-                }
-            } else if (link.from === v2) {
-                if (link.to === v0) {
-                    thirdDuplicate = true;
-                } else if (link.to === v1) {
-                    secondDuplicate = true;
-                }
-            }
-        }
-
-        if (!firstDuplicate) {
-            links.push(createLine(v0, v1));
-        }
-        if (!secondDuplicate) {
-            links.push(createLine(v1, v2));
-        }
-        if (!thirdDuplicate) {
-            links.push(createLine(v2, v0));
-        }
-    }
-
-    return links;
+    return triangulation;
 }
 
 function insideCircumcircle<TNode extends Coord<TNode>>(

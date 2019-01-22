@@ -3,6 +3,8 @@ import { Room } from './Room';
 import { Tile } from './Tile';
 import { Graph } from './generic/Graph';
 import { Curve } from './generic/Curve';
+import { Polygon } from './generic/Polygon';
+import { Coord2D } from './generic/Coord';
 
 export class Dungeon extends Graph<Room, Pathway> {
     seed: number;
@@ -13,6 +15,7 @@ export class Dungeon extends Graph<Room, Pathway> {
 
     grid: Tile[][];
     walls: Curve[];
+    backdropCells: Polygon<Coord2D>[];
     
     constructor(public nodeCount: number,
                 public width: number,
@@ -20,6 +23,6 @@ export class Dungeon extends Graph<Room, Pathway> {
                 public connectivity: number
         ) {
         super();
-        this.seed = Math.random();
+        this.seed = 0.35524562629550926; // Math.random();
     }
 }
