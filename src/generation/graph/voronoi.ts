@@ -27,9 +27,9 @@ export function computeVoronoiCells<TNode extends Coord<TNode>>(
             const nextIndex = unsortedTriangles.findIndex(
                 t => t.vertices.indexOf(v1) !== -1 || t.vertices.indexOf(v2) !== -1
             );
-            const nextTriangle = unsortedTriangles.splice(nextIndex, 1)[0];
+            lastTriangle = unsortedTriangles.splice(nextIndex, 1)[0];
 
-            sortedTriangles.push(nextTriangle);
+            sortedTriangles.push(lastTriangle);
         }
         
         // The vertices of the voronoi cell are the circumcentres of each triangle that shares its central vertex.

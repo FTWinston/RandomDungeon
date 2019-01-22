@@ -96,13 +96,13 @@ export class DungeonGenerator {
                 await this.delay(100);
             }
 
-            this.addSpacedNode(dungeon, makeNode, dungeon.width, dungeon.height);
+            DungeonGenerator.addSpacedNode(dungeon, makeNode, dungeon.width, dungeon.height);
         }
 
         this.stepReached(GenerationSteps.CreateNodes, false);
     }
 
-    private addSpacedNode<TNode extends Coord2D, TLine extends Line<TNode>>(
+    public static addSpacedNode<TNode extends Coord2D, TLine extends Line<TNode>>(
         dungeon: Graph<TNode, TLine>,
         makeNode: () => TNode,
         totWidth: number,
@@ -731,7 +731,7 @@ export class DungeonGenerator {
         };
 
         for (let i = 0; i < 1000; i++) {
-            this.addSpacedNode(backdropGraph, makeNode, dungeon.width, dungeon.height);
+            DungeonGenerator.addSpacedNode(backdropGraph, makeNode, dungeon.width, dungeon.height);
         }
 
         if (this.animated) {
