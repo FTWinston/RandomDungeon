@@ -36,11 +36,9 @@ export class Curve {
         // decide if it's a closed loop, which needs the ends of the array set up differently
         let lastCellIndex: number;
         if (firstCell === lastCell) {
-            this.isLoop = true;
             lastCellIndex = this.keyPoints.length - 2; // don't copy the last cell, its the same as the first
             lastCell = this.keyPoints[lastCellIndex];
         } else {
-            this.isLoop = false;
             lastCellIndex = this.keyPoints.length - 1;
         }
         

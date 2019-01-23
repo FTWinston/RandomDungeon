@@ -138,9 +138,13 @@ export class DungeonDrawer {
             ctx.beginPath();
 
             ctx.rect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
-            for (let curve of dungeon.walls) {
+
+            const edgeWalls = dungeon.walls.filter(c => c.isLoop);
+
+            for (const curve of edgeWalls) {
                 this.drawCurve(curve, ctx, this.scale, this.scale, false);
             }
+
             ctx.clip('evenodd');
  
             ctx.fillStyle = '#000000';
@@ -175,7 +179,7 @@ export class DungeonDrawer {
         if (this.drawWalls) {
             ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
             ctx.lineCap = 'round';
-            for (let curve of dungeon.walls) {
+            for (const curve of dungeon.walls) {
                 ctx.strokeStyle = ctx.fillStyle = curve.color;
                 this.drawCurve(curve, ctx, this.scale, this.scale);
             }
