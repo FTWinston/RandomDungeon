@@ -13,6 +13,7 @@ export class Curve {
         this.keyPoints = [];
         this.isLoop = false;
         this.color = randomColor();
+        this.renderPoints = [];
     }
 
     updateRenderPoints() {

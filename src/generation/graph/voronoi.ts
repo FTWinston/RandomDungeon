@@ -2,6 +2,12 @@ import { Coord } from '../../model/generic/Coord';
 import { Triangle } from '../../model/generic/Triangle';
 import { Polygon } from '../../model/generic/Polygon';
 
+export class Cell<TNode extends Coord<TNode>> extends Polygon<TNode> {
+    constructor(public center: TNode, vertices: TNode[]) {
+        super(vertices);
+    }
+}
+
 export function computeVoronoiCells<TNode extends Coord<TNode>>(
     nodes: TNode[],
     triangles: Triangle<TNode>[]
@@ -36,6 +42,6 @@ export function computeVoronoiCells<TNode extends Coord<TNode>>(
         const vertices = sortedTriangles
             .map(t => t.circumCenter);
 
-        return new Polygon(vertices);
+        return new Cell(node, vertices);
     });
 }

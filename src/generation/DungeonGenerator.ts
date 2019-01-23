@@ -15,8 +15,7 @@ import {
 import { Coord2D } from '../model/generic/Coord';
 import { Graph } from '../model/generic/Graph';
 import { Line } from '../model/generic/Line';
-import { computeVoronoiCells } from './graph/voronoi';
-import { Polygon } from '../model/generic/Polygon';
+import { computeVoronoiCells, Cell } from './graph/voronoi';
 
 export class DungeonGenerator {
     constructor(
@@ -58,11 +57,17 @@ export class DungeonGenerator {
             await this.detectWalls(dungeon);
         }
         
+        const curveSeed = seedGenerator.next();
         if (startStep <= GenerationSteps.CurveWalls) {
-            await this.generateWallCurves(dungeon);
+            await this.generateWallCurves(dungeon, curveSeed);
+        }
+        
+        const backdropSeed = seedGenerator.next();
+        if (startStep <= GenerationSteps.FillBackdrop) {
+            await this.generateBackdrop(dungeon, backdropSeed);
         }
 
-        const backdropSeed = seedGenerator.next();
+        // const backdropSeed = seedGenerator.next();
         if (startStep <= GenerationSteps.FillBackdrop) {
             await this.generateBackdrop(dungeon, backdropSeed);
         }
@@ -96,13 +101,13 @@ export class DungeonGenerator {
                 await this.delay(100);
             }
 
-            DungeonGenerator.addSpacedNode(dungeon, makeNode, dungeon.width, dungeon.height);
+            this.addSpacedNode(dungeon, makeNode, dungeon.width, dungeon.height);
         }
 
         this.stepReached(GenerationSteps.CreateNodes, false);
     }
 
-    public static addSpacedNode<TNode extends Coord2D, TLine extends Line<TNode>>(
+    private addSpacedNode<TNode extends Coord2D, TLine extends Line<TNode>>(
         dungeon: Graph<TNode, TLine>,
         makeNode: () => TNode,
         totWidth: number,
@@ -137,7 +142,7 @@ export class DungeonGenerator {
 
         if (this.animated) {
             this.redraw();
-            await this.delay(1500);
+            await this.delay(500);
         }
 
         const enclosingTriangle: [Room, Room, Room] = [
@@ -152,7 +157,7 @@ export class DungeonGenerator {
         
         if (this.animated) {
             this.redraw();
-            await this.delay(1500);
+            await this.delay(500);
         }
 
         dungeon.gabrielLines = computeGabrielGraph(dungeon, dungeon.delauneyLines);
@@ -397,10 +402,10 @@ export class DungeonGenerator {
                 };
             }
 
-            minX = Math.max(1, minX);
-            maxX = Math.min(dungeon.width - 2, maxX);
-            minY = Math.max(1, minY);
-            maxY = Math.min(dungeon.height - 2, maxY);
+            minX = Math.max(2, minX);
+            maxX = Math.min(dungeon.width - 3, maxX);
+            minY = Math.max(2, minY);
+            maxY = Math.min(dungeon.height - 3, maxY);
 
             for (let x = minX; x <= maxX; x++) {
                 for (let y = minY; y <= maxY; y++) {
@@ -431,6 +436,7 @@ export class DungeonGenerator {
                 for (let test of toTest) {
                     if (test.isFloor) {
                         tile.isWall = true;
+                        tile.room = test.room;
                         break;
                     }
                 }
@@ -446,6 +452,7 @@ export class DungeonGenerator {
                 for (let test of toTest) {
                     if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {
                         tile.isWall = true;
+                        tile.room = test.room;
                         break;
                     }
                 }
@@ -463,7 +470,8 @@ export class DungeonGenerator {
         }
     }
     
-    private async generateWallCurves(dungeon: Dungeon) {
+    private async generateWallCurves(dungeon: Dungeon, seed: number) {
+        const random = new SRandom(seed);
         dungeon.walls = [];
         
         this.stepReached(GenerationSteps.CurveWalls, true);
@@ -472,8 +480,8 @@ export class DungeonGenerator {
             for (let y = 0; y < dungeon.height; y++) {
                 let tile = dungeon.grid[x][y];
                 if (tile.isWall && !tile.isFloor) {
-                    await this.generateWallCurve(dungeon, tile);
-                    
+                    await this.generateWallCurve(dungeon, tile, random);
+
                     if (this.animated) {
                         this.redraw();
                         await this.delay(500);
@@ -490,9 +498,118 @@ export class DungeonGenerator {
         }
     }
 
-    private async generateWallCurve(dungeon: Dungeon, firstTile: Tile) {
-        let curve = new Curve();
+    private async generateWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRandom) {
+        const mainCurve = await this.generateSingleWallCurve(dungeon, firstTile, random);
+
+        while (true) {
+            // See if we could have taken a different path at any point.
+            const newStartPoint = this.backtrackToNewStartPoint(dungeon, mainCurve);
+            if (newStartPoint === undefined) {
+                this.checkForCurveLoops(dungeon, mainCurve);
+
+                mainCurve.updateRenderPoints();
+                return mainCurve;
+            }
+
+            if (this.animated) {
+                this.redraw();
+                await this.delay(1500);
+            }
+
+            // See if the different path is longer.
+            const branchIndex = mainCurve.keyPoints.indexOf(newStartPoint);
+            
+            const newCurve = await this.generateWallCurve(dungeon, newStartPoint, random);
+
+            if (newCurve.keyPoints.length <= mainCurve.keyPoints.length - branchIndex || newStartPoint === firstTile) {
+                continue;
+            }
+
+            // Swap the paths around so that this path is as long as possible.
+
+            let newBranch = newCurve.keyPoints.slice(1);
+            let oldBranch = mainCurve.keyPoints.splice(branchIndex + 1);
+            oldBranch.unshift(newStartPoint);
+
+            newCurve.keyPoints = oldBranch;
+            mainCurve.keyPoints = mainCurve.keyPoints.concat(newBranch);
+            
+            this.checkForCurveLoops(dungeon, newCurve);
+
+            newCurve.updateRenderPoints();
+        }
+    }
+
+    private backtrackToNewStartPoint(dungeon: Dungeon, curve: Curve) {
+        // iterate backwards round this curve, trying to find somewhere to branch off a new curve from
+        for (let i = curve.keyPoints.length - 1; i >= 0; i--) {
+            let curveTile = curve.keyPoints[i] as Tile;
+
+            let viableTile = this.pickBestAdjacentWallTile(dungeon, curveTile, true, true, t => !t.isFloor && t.isWall);
+            if (viableTile !== undefined) {
+                return curveTile;
+            }
+        }
+
+        return undefined;
+    }
+    
+    private checkForCurveLoops(dungeon: Dungeon, mainCurve: Curve) {
+        // detect simple loops, as well as "p" and "b" loops that need split into two parts
+        const firstPoint = mainCurve.keyPoints[0];
+        const lastPoint = mainCurve.keyPoints[mainCurve.keyPoints.length - 1];
+        
+        if (firstPoint === lastPoint) {
+            mainCurve.isLoop = true;
+        } else {
+            let splitPos = mainCurve.keyPoints.lastIndexOf(firstPoint);
+            if (splitPos > 0) {
+                // p shape, loop at the start
+                const splitCurve = new Curve();
+                splitCurve.keyPoints = mainCurve.keyPoints.splice(splitPos + 1);
+                splitCurve.keyPoints.unshift(mainCurve.keyPoints[splitPos]);
+                splitCurve.updateRenderPoints();
+                dungeon.walls.push(splitCurve);
+                
+                mainCurve.isLoop = true;
+            } else {
+                splitPos = mainCurve.keyPoints.indexOf(lastPoint);
+                if (splitPos < mainCurve.keyPoints.length - 1) {
+                    // b shape, loop at the end
+                    /*
+                    console.log(`loop found in curve ${dungeon.walls.indexOf(mainCurve)} at index ${splitPos} ... 0-${splitPos} will separate off linearly, keeping from ${splitPos}-${mainCurve.keyPoints.length - 1} as a loop`);
+                    console.log(`index ${0} is ${mainCurve.keyPoints[0].x}, ${mainCurve.keyPoints[0].y}`);
+                    console.log(`index ${splitPos} is ${mainCurve.keyPoints[splitPos].x}, ${mainCurve.keyPoints[splitPos].y}`);
+                    console.log(`index ${mainCurve.keyPoints.length - 1} is ${mainCurve.keyPoints[mainCurve.keyPoints.length - 1].x}, ${mainCurve.keyPoints[mainCurve.keyPoints.length - 1].y}`);
+                    */
+                    const splitCurve = new Curve();
+                    const splitPoint = mainCurve.keyPoints[splitPos];
+                    splitCurve.keyPoints = mainCurve.keyPoints.splice(0, splitPos - 1);
+                    splitCurve.keyPoints.push(splitPoint);
+                    splitCurve.updateRenderPoints();
+                    dungeon.walls.push(splitCurve);
+
+                    mainCurve.isLoop = true;
+
+                    /*
+                    console.log(`after splitting, main curve is ${mainCurve.keyPoints.length} long`);
+                    console.log(`split curve is ${splitCurve.keyPoints.length} long`);
+                    */
+                }
+            }
+        }
+    }
+
+    private async generateSingleWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRandom) {
+        const curve = new Curve();
         dungeon.walls.push(curve);
+
+        // If there's an adjacent tile that's already part of a wall curve, start from that instead.
+        const actualFirstTile = this.getAdjacent(dungeon, firstTile, true, true)
+            .find(t => t.isWall && t.isFloor);
+        if (actualFirstTile !== undefined) {
+            curve.keyPoints.push(actualFirstTile);
+        }
 
         curve.keyPoints.push(firstTile);
         firstTile.isFloor = true;
@@ -512,25 +629,14 @@ export class DungeonGenerator {
                 t => t.isWall
             );
         }
-
-        // let lastTile = firstTile;
         
         let isDeadEnd = false;
         let prevTile = firstTile;
         while (tile !== undefined) {
-            // lastTile = tile;
-            /*
-            // to make curves look better, only include alternate tiles ... unless they're important ones.
-            if ((tile.x !== prevTile.x && tile.y !== prevTile.y) || tile.isFloor || tile === firstTile) {
-                addKeyPoint = true;
-            }
-            if (addKeyPoint) {
-                */
+            // TODO: caves should be more likely to add mid-vertices and get squiggly shapes
+            // if (tile.room !== null || tile === firstTile || random.nextInRange(0, 1) < 0.2) {
             curve.keyPoints.push(tile);
-                /*
-            }
-            addKeyPoint = !addKeyPoint;
-            */
+            // }
             
             // if the next one is the first one, note that this is a loop and stop.
             if (tile === firstTile) {
@@ -570,58 +676,14 @@ export class DungeonGenerator {
             isDeadEnd = true;
         }
 
-        if (this.animated) {
-            curve.updateRenderPoints();
-            this.redraw();
-            await this.delay(10);
-        }
-
-        await this.backtrackAndBranch(dungeon, curve, isDeadEnd);
-
         curve.updateRenderPoints();
-        return curve;
-    }
-    
-    private async backtrackAndBranch(dungeon: Dungeon, curve: Curve, isDeadEnd: boolean) {
-        // iterate backwards round this curve, trying to find somewhere to branch off a new curve from
-        for (let i = curve.keyPoints.length - 1; i >= 0; i--) {
-            let curveTile = curve.keyPoints[i] as Tile;
 
-            // if there's an adjacent tile a wall can start from, generate a new curve and call this method on it again
-            let viableTile = this.pickBestAdjacentWallTile(dungeon, curveTile, true, true, t => !t.isFloor && t.isWall);
-            if (viableTile !== undefined) {
-                let newCurve = await this.generateWallCurve(dungeon, curveTile);
-                
-                if (isDeadEnd) {
-                    if (this.animated) {
-                        this.redraw();
-                        await this.delay(500);
-                    }
-                    
-                    // chop off the dead end from the initial curve, and graft the new curve on.
-                    // then have the chopped-off dead end be the new curve instead
-                    let newBranch = newCurve.keyPoints.slice(1);
-                    let deadEnd = curve.keyPoints.splice(i + 1);
-                    deadEnd.unshift(curveTile);
-
-                    newCurve.keyPoints = deadEnd;
-                    curve.keyPoints = curve.keyPoints.concat(newBranch);
-                    
-                    if (curve.keyPoints[0] === curve.keyPoints[curve.keyPoints.length - 1]) {
-                        curve.isLoop = true;
-                        isDeadEnd = false;
-                    }
-
-                    curve.updateRenderPoints();
-                    newCurve.updateRenderPoints();
-                }
-
-                if (this.animated) {
-                    this.redraw();
-                    await this.delay(500);
-                }
-            }
+        if (this.animated) {
+            this.redraw();
+            await this.delay(500);
         }
+
+        return curve;
     }
 
     private getAdjacent(dungeon: Dungeon, from: Tile, orthogonal: boolean = true, diagonal: boolean = false) {
@@ -719,10 +781,17 @@ export class DungeonGenerator {
         const wallPoints: Coord2D[] = [];
         for (const curve of dungeon.walls) {
             for (const point of curve.keyPoints) { // TODO: should we use w.renderPoints instead?
-                wallPoints.push(point);
+                if (wallPoints.indexOf(point) === -1) {
+                    wallPoints.push(point);
+                }
             }
         }
         backdropGraph.nodes = wallPoints.slice();
+        
+        backdropGraph.nodes.unshift(new Coord2D(0, 0));
+        backdropGraph.nodes.unshift(new Coord2D(dungeon.width, 0));
+        backdropGraph.nodes.unshift(new Coord2D(0, dungeon.height));
+        backdropGraph.nodes.unshift(new Coord2D(dungeon.width, dungeon.height));
 
         let makeNode = () => {
             let x = random.nextInRange(0, dungeon.width);
@@ -730,14 +799,9 @@ export class DungeonGenerator {
             return new Coord2D(x, y);
         };
 
-        for (let i = 0; i < 1000; i++) {
-            DungeonGenerator.addSpacedNode(backdropGraph, makeNode, dungeon.width, dungeon.height);
-        }
-
-        if (this.animated) {
-            // TODO: these nodes should be visible, right?
-            this.redraw();
-            await this.delay(1000);
+        const numNodes = dungeon.width * dungeon.height / 10;
+        for (let i = 0; i < numNodes; i++) {
+            this.addSpacedNode(backdropGraph, makeNode, dungeon.width, dungeon.height);
         }
 
         const enclosingTriangle: [Coord2D, Coord2D, Coord2D] = [
@@ -754,15 +818,17 @@ export class DungeonGenerator {
             await this.delay(1000);
         }
 
-        const allVoronoiCells = computeVoronoiCells(backdropGraph.nodes, delauneyTriangles) as Polygon<Coord2D>[];
-        /*
-        const edgeVoronoiCells = allVoronoiCells.filter(
-            c => c.vertices.some(v => wallPoints.indexOf(v as Coord2D) !== -1)
+        const allVoronoiCells = computeVoronoiCells(backdropGraph.nodes, delauneyTriangles) as Cell<Coord2D>[];
+        const edgeVoronoiCells = allVoronoiCells.filter(c => wallPoints.indexOf(c.center) !== -1);
+        const edgeVoronoiVertices = [].concat.apply([], edgeVoronoiCells.map(c => c.vertices)) as Coord2D[];
+
+        const edgePlusOneVoronoiCells = allVoronoiCells.filter(
+            c => c.vertices.some(v => edgeVoronoiVertices.indexOf(v) !== -1)
         );
-        */
+
         // TODO: filter out cells that are WITHIN the map - we only want those outside
 
-        dungeon.backdropCells = allVoronoiCells; // edgeVoronoiCells;
+        dungeon.backdropCells = edgePlusOneVoronoiCells;
 
         if (this.animated) {
             // TODO: cells should be visible

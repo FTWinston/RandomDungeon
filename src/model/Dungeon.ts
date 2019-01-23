@@ -23,6 +23,6 @@ export class Dungeon extends Graph<Room, Pathway> {
                 public connectivity: number
         ) {
         super();
-        this.seed = 0.35524562629550926; // Math.random();
+        this.seed = Math.random();
     }
 }

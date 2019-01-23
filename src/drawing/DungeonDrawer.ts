@@ -1,14 +1,9 @@
 import { Dungeon } from '../model/Dungeon';
+import { Pathway } from '../model/Pathway';
+import { Room } from '../model/Room';
+import { Tile } from '../model/Tile';
 import { GenerationSteps } from '../generation/GenerationSteps';
-import { randomColor } from '../generation/randomColor';
-import { Graph } from '../model/generic/Graph';
-import { Coord2D } from '../model/generic/Coord';
-import { Line } from '../model/generic/Line';
-import { SRandom } from '../generation/SRandom';
-import { DungeonGenerator } from '../generation/DungeonGenerator';
-import { computeDelauneyTriangulation, getUniqueLines } from '../generation/graph';
-import { Polygon } from '../model/generic/Polygon';
-import { computeVoronoiCells } from '../generation/graph/voronoi';
+import { Curve } from '../model/generic/Curve';
 
 export class DungeonDrawer {   
     dungeon: Dungeon;
@@ -97,8 +92,6 @@ export class DungeonDrawer {
 
         ctx.clearRect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
 
-/*
-
         if (this.drawGrid) {
             ctx.lineWidth = 1;
             for (let x = 0; x < dungeon.width; x++) {
@@ -141,6 +134,21 @@ export class DungeonDrawer {
         }
         
         if (this.fillOutside) {
+            ctx.save();
+            ctx.beginPath();
+
+            ctx.rect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
+            for (let curve of dungeon.walls) {
+                this.drawCurve(curve, ctx, this.scale, this.scale, false);
+            }
+            ctx.clip('evenodd');
+ 
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
+
+            /*
+            ctx.globalAlpha = 0.7;
+
             for (const poly of dungeon.backdropCells) {
                 ctx.fillStyle = randomColor();
 
@@ -157,6 +165,11 @@ export class DungeonDrawer {
 
                 ctx.fill();
             }
+
+            ctx.globalAlpha = 1;
+            */
+
+            ctx.restore();
         }
 
         if (this.drawWalls) {
@@ -183,66 +196,9 @@ export class DungeonDrawer {
                 this.drawRoom(dungeon.nodes[i], ctx, this.scale);
             }
             ctx.globalAlpha = 1;
-        }*/
-
-        
-        const tmpGraph = new Graph<Coord2D, Line<Coord2D>>();
-        const random = new SRandom(Math.random());
-
-        let makeNode = () => {
-            let x = random.nextInRange(0, dungeon.width);
-            let y = random.nextInRange(0, dungeon.height);
-            return new Coord2D(x, y);
-        };
-
-        for (let i = 0; i < 10; i++) {
-            DungeonGenerator.addSpacedNode(tmpGraph, makeNode, dungeon.width, dungeon.height);
-        }
-
-        const enclosingTriangle: [Coord2D, Coord2D, Coord2D] = [
-            new Coord2D(0, 0),
-            new Coord2D(999999, 0),
-            new Coord2D(0, 999999),
-        ];
-
-        const delauneyTriangles = computeDelauneyTriangulation(tmpGraph, enclosingTriangle);
-
-        const delauneyLines = getUniqueLines(delauneyTriangles, (from, to) => new Line<Coord2D>(from, to));
-
-        const allVoronoiCells = computeVoronoiCells(tmpGraph.nodes, delauneyTriangles) as Polygon<Coord2D>[];
-
-        for (const poly of allVoronoiCells) {
-            ctx.fillStyle = randomColor();
-
-            ctx.beginPath();
-
-            const startCell = poly.vertices[0];
-            
-            ctx.moveTo(startCell.x * this.scale, startCell.y * this.scale);
-
-            for (const cell of poly.vertices.slice(1)) {
-                ctx.lineTo(cell.x * this.scale, cell.y * this.scale);
-            }
-            ctx.lineTo(startCell.x * this.scale, startCell.y * this.scale);
-
-            ctx.fill();
-        }
-
-        ctx.strokeStyle = '#000000';
-        ctx.beginPath();
-        for (const line of delauneyLines) {
-            ctx.moveTo(line.from.x * this.scale, line.from.y * this.scale);
-            ctx.lineTo(line.to.x * this.scale, line.to.y * this.scale);
-        }
-        ctx.stroke();
-
-        ctx.fillStyle = '#000000';
-        let iPoint = 0;
-        for (const point of tmpGraph.nodes) {
-            ctx.fillText((iPoint++).toString(), (point.x - 2) * this.scale, (point.y - 2) * this.scale);
         }
     }
-/*
+
     private drawPath(pathway: Pathway, ctx: CanvasRenderingContext2D, scale: number) {
         ctx.beginPath();
         ctx.moveTo(pathway.from.x * scale, pathway.from.y * scale);
@@ -263,10 +219,12 @@ export class DungeonDrawer {
             ctx.fillStyle = '#000';
             ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
         } else if (tile.isFloor) {
+            /*
             if (tile.room !== null) {
                 ctx.fillStyle = tile.room.color;
                 ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
             }
+            */
             ctx.strokeStyle = 'rgba(200,200,200,0.5)';
             ctx.strokeRect(tile.x * scale, tile.y * scale, scale, scale);
         } else {
@@ -318,5 +276,4 @@ export class DungeonDrawer {
             ctx.stroke();
         }
     }
-    */
 }
