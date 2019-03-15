@@ -138,40 +138,27 @@ export class DungeonDrawer {
             ctx.beginPath();
 
             ctx.rect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
-
-            const edgeWalls = dungeon.walls.filter(c => c.isLoop);
-
-            for (const curve of edgeWalls) {
+            for (let curve of dungeon.walls) {
                 this.drawCurve(curve, ctx, this.scale, this.scale, false);
             }
-
             ctx.clip('evenodd');
- 
-            ctx.fillStyle = '#000000';
+
+            ctx.fillStyle = '#fff';
             ctx.fillRect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
 
-            /*
-            ctx.globalAlpha = 0.7;
-
-            for (const poly of dungeon.backdropCells) {
-                ctx.fillStyle = randomColor();
-
-                ctx.beginPath();
-
-                const startCell = poly.vertices[0];
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = this.scale * 0.1;
+            let vmax = Math.max(dungeon.width, dungeon.height) * this.scale;
+            let width = dungeon.width * this.scale;
+            let iMax = vmax * 2;
+            for (let i = iMax; i >= 0; i -= this.scale * 0.75) {
+                ctx.moveTo(0, i);
+                ctx.lineTo(i, 0);
                 
-                ctx.moveTo(startCell.x * this.scale, startCell.y * this.scale);
-
-                for (const cell of poly.vertices.slice(1)) {
-                    ctx.lineTo(cell.x * this.scale, cell.y * this.scale);
-                }
-                ctx.lineTo(startCell.x * this.scale, startCell.y * this.scale);
-
-                ctx.fill();
+                ctx.moveTo(width, iMax - i);
+                ctx.lineTo(i - vmax, 0);
             }
-
-            ctx.globalAlpha = 1;
-            */
+            ctx.stroke();
 
             ctx.restore();
         }
@@ -180,7 +167,6 @@ export class DungeonDrawer {
             ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
             ctx.lineCap = 'round';
             for (const curve of dungeon.walls) {
-                ctx.strokeStyle = ctx.fillStyle = curve.color;
                 this.drawCurve(curve, ctx, this.scale, this.scale);
             }
             ctx.lineCap = 'butt';
