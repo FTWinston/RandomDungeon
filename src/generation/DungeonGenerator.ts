@@ -15,7 +15,6 @@ import {
 import { Coord2D } from '../model/generic/Coord';
 import { Graph } from '../model/generic/Graph';
 import { Line } from '../model/generic/Line';
-import { computeVoronoiCells, Cell } from './graph/voronoi';
 
 export class DungeonGenerator {
     constructor(
@@ -62,16 +61,6 @@ export class DungeonGenerator {
             await this.generateWallCurves(dungeon, curveSeed);
         }
         
-        const backdropSeed = seedGenerator.next();
-        if (startStep <= GenerationSteps.FillBackdrop) {
-            await this.generateBackdrop(dungeon, backdropSeed);
-        }
-
-        // const backdropSeed = seedGenerator.next();
-        if (startStep <= GenerationSteps.FillBackdrop) {
-            await this.generateBackdrop(dungeon, backdropSeed);
-        }
-
         this.stepReached(GenerationSteps.Render, true);
         this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
@@ -766,75 +755,5 @@ export class DungeonGenerator {
         }
         
         return bestTile;
-    }
-
-    private async generateBackdrop(dungeon: Dungeon, seed: number) {
-        const random = new SRandom(seed);
-        this.stepReached(GenerationSteps.FillBackdrop, true);
-
-        const backdropGraph = new Graph<Coord2D, Line<Coord2D>>();
-
-        // Add all existing wall points to the backdrop graph, before we add random ones
-        const wallPoints: Coord2D[] = [];
-        for (const curve of dungeon.walls) {
-            for (const point of curve.keyPoints) { // TODO: should we use w.renderPoints instead?
-                if (wallPoints.indexOf(point) === -1) {
-                    wallPoints.push(point);
-                }
-            }
-        }
-        backdropGraph.nodes = wallPoints.slice();
-        
-        backdropGraph.nodes.unshift(new Coord2D(0, 0));
-        backdropGraph.nodes.unshift(new Coord2D(dungeon.width, 0));
-        backdropGraph.nodes.unshift(new Coord2D(0, dungeon.height));
-        backdropGraph.nodes.unshift(new Coord2D(dungeon.width, dungeon.height));
-
-        let makeNode = () => {
-            let x = random.nextInRange(0, dungeon.width);
-            let y = random.nextInRange(0, dungeon.height);
-            return new Coord2D(x, y);
-        };
-
-        const numNodes = dungeon.width * dungeon.height / 10;
-        for (let i = 0; i < numNodes; i++) {
-            this.addSpacedNode(backdropGraph, makeNode, dungeon.width, dungeon.height);
-        }
-
-        const enclosingTriangle: [Coord2D, Coord2D, Coord2D] = [
-            new Coord2D(0, 0),
-            new Coord2D(999999, 0),
-            new Coord2D(0, 999999),
-        ];
-
-        const delauneyTriangles = computeDelauneyTriangulation(backdropGraph, enclosingTriangle);
-
-        if (this.animated) {
-            // TODO: triangles should be visible
-            this.redraw();
-            await this.delay(1000);
-        }
-
-        const allVoronoiCells = computeVoronoiCells(backdropGraph.nodes, delauneyTriangles) as Cell<Coord2D>[];
-        const edgeVoronoiCells = allVoronoiCells.filter(c => wallPoints.indexOf(c.center) !== -1);
-        const edgeVoronoiVertices = [].concat.apply([], edgeVoronoiCells.map(c => c.vertices)) as Coord2D[];
-
-        const edgePlusOneVoronoiCells = allVoronoiCells.filter(
-            c => c.vertices.some(v => edgeVoronoiVertices.indexOf(v) !== -1)
-        );
-
-        // TODO: filter out cells that are WITHIN the map - we only want those outside
-
-        dungeon.backdropCells = edgePlusOneVoronoiCells;
-
-        if (this.animated) {
-            // TODO: cells should be visible
-            this.redraw();
-            await this.delay(1000);
-        }
-
-        // TODO: determine which voronoi cells to keep!
-
-        this.stepReached(GenerationSteps.FillBackdrop, false);
     }
 }

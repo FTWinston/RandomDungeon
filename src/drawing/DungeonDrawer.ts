@@ -63,14 +63,6 @@ export class DungeonDrawer {
                     this.highlightWallCurves = false;
                 }
                 break;
-            
-            case GenerationSteps.FillBackdrop:
-                if (startOfStep) {
-                    // this.drawBackdropNodes = true;
-                } else {
-                    // this.drawBackdropNodes = false;
-                }
-                break;
 
             case GenerationSteps.Render:
                 this.fillOutside = true;
