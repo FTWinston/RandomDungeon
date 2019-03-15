@@ -572,30 +572,32 @@ export class DungeonGenerator {
                 dungeon.walls.push(splitCurve);
                 
                 mainCurve.isLoop = true;
-            } else {
-                splitPos = mainCurve.keyPoints.indexOf(lastPoint);
-                if (splitPos < mainCurve.keyPoints.length - 1) {
-                    // b shape, loop at the end
-                    /*
-                    console.log(`loop found in curve ${dungeon.walls.indexOf(mainCurve)} at index ${splitPos} ... 0-${splitPos} will separate off linearly, keeping from ${splitPos}-${mainCurve.keyPoints.length - 1} as a loop`);
-                    console.log(`index ${0} is ${mainCurve.keyPoints[0].x}, ${mainCurve.keyPoints[0].y}`);
-                    console.log(`index ${splitPos} is ${mainCurve.keyPoints[splitPos].x}, ${mainCurve.keyPoints[splitPos].y}`);
-                    console.log(`index ${mainCurve.keyPoints.length - 1} is ${mainCurve.keyPoints[mainCurve.keyPoints.length - 1].x}, ${mainCurve.keyPoints[mainCurve.keyPoints.length - 1].y}`);
-                    */
-                    const splitCurve = new Curve();
-                    const splitPoint = mainCurve.keyPoints[splitPos];
-                    splitCurve.keyPoints = mainCurve.keyPoints.splice(0, splitPos - 1);
-                    splitCurve.keyPoints.push(splitPoint);
-                    splitCurve.updateRenderPoints();
-                    dungeon.walls.push(splitCurve);
+                // console.log('found a P, splitting linear end bit into its own curve');
+            }
+            
+            splitPos = mainCurve.keyPoints.indexOf(lastPoint);
+            if (splitPos < mainCurve.keyPoints.length - 1) {
+                // b shape, loop at the end
+                /*
+                console.log(`loop found in curve ${dungeon.walls.indexOf(mainCurve)} at index ${splitPos} ... 0-${splitPos} will separate off linearly, keeping from ${splitPos}-${mainCurve.keyPoints.length - 1} as a loop`);
+                console.log(`index ${0} is ${mainCurve.keyPoints[0].x}, ${mainCurve.keyPoints[0].y}`);
+                console.log(`index ${splitPos} is ${mainCurve.keyPoints[splitPos].x}, ${mainCurve.keyPoints[splitPos].y}`);
+                console.log(`index ${mainCurve.keyPoints.length - 1} is ${mainCurve.keyPoints[mainCurve.keyPoints.length - 1].x}, ${mainCurve.keyPoints[mainCurve.keyPoints.length - 1].y}`);
+                */
+                const splitCurve = new Curve();
+                const splitPoint = mainCurve.keyPoints[splitPos];
+                splitCurve.keyPoints = mainCurve.keyPoints.splice(0, splitPos - 1);
+                splitCurve.keyPoints.push(splitPoint);
+                splitCurve.updateRenderPoints();
+                dungeon.walls.push(splitCurve);
 
-                    mainCurve.isLoop = true;
+                mainCurve.isLoop = true;
+                // console.log('found a B, splitting linear start bit into its own curve');
 
-                    /*
-                    console.log(`after splitting, main curve is ${mainCurve.keyPoints.length} long`);
-                    console.log(`split curve is ${splitCurve.keyPoints.length} long`);
-                    */
-                }
+                /*
+                console.log(`after splitting, main curve is ${mainCurve.keyPoints.length} long`);
+                console.log(`split curve is ${splitCurve.keyPoints.length} long`);
+                */
             }
         }
     }
@@ -630,7 +632,6 @@ export class DungeonGenerator {
             );
         }
         
-        let isDeadEnd = false;
         let prevTile = firstTile;
         while (tile !== undefined) {
             // TODO: caves should be more likely to add mid-vertices and get squiggly shapes
@@ -645,7 +646,6 @@ export class DungeonGenerator {
             }
             
             if (tile.isFloor) {
-                isDeadEnd = curve.keyPoints.indexOf(tile) !== curve.keyPoints.length - 1;
                 break; // intersected a(nother) curve, so end this one
             }
             tile.isFloor = true;
@@ -671,9 +671,6 @@ export class DungeonGenerator {
                 this.redraw();
                 await this.delay(10);
             }
-        }
-        if (tile === undefined) {
-            isDeadEnd = true;
         }
 
         curve.updateRenderPoints();
