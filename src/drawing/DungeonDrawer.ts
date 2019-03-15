@@ -151,10 +151,8 @@ export class DungeonDrawer {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
 
-            ctx.globalAlpha = 0.7;
-
             for (const poly of dungeon.backdropCells) {
-                ctx.fillStyle = randomColor();
+                ctx.save();
 
                 ctx.beginPath();
 
@@ -167,10 +165,13 @@ export class DungeonDrawer {
                 }
                 ctx.lineTo(startCell.x * this.scale, startCell.y * this.scale);
 
-                ctx.fill();
-            }
+                ctx.clip();
 
-            ctx.globalAlpha = 1;
+                ctx.fillStyle = randomColor();
+                ctx.fillRect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
+                
+                ctx.restore();
+            }
 
             ctx.restore();
         }
