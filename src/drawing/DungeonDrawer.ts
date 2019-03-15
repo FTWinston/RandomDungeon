@@ -4,6 +4,7 @@ import { Room } from '../model/Room';
 import { Tile } from '../model/Tile';
 import { GenerationSteps } from '../generation/GenerationSteps';
 import { Curve } from '../model/generic/Curve';
+import { randomColor } from '../generation/randomColor';
 
 export class DungeonDrawer {   
     dungeon: Dungeon;
@@ -147,10 +148,9 @@ export class DungeonDrawer {
 
             ctx.clip('evenodd');
  
-            ctx.fillStyle = '#000000';
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, dungeon.width * this.scale, dungeon.height * this.scale);
 
-            /*
             ctx.globalAlpha = 0.7;
 
             for (const poly of dungeon.backdropCells) {
@@ -171,7 +171,6 @@ export class DungeonDrawer {
             }
 
             ctx.globalAlpha = 1;
-            */
 
             ctx.restore();
         }
@@ -180,7 +179,6 @@ export class DungeonDrawer {
             ctx.strokeStyle = ctx.fillStyle = this.highlightWallCurves ? '#f00' : '#000';
             ctx.lineCap = 'round';
             for (const curve of dungeon.walls) {
-                ctx.strokeStyle = ctx.fillStyle = curve.color;
                 this.drawCurve(curve, ctx, this.scale, this.scale);
             }
             ctx.lineCap = 'butt';
