@@ -1,9 +1,9 @@
-import { Dungeon } from '../model/Dungeon';
-import { Pathway } from '../model/Pathway';
-import { Room } from '../model/Room';
-import { Tile } from '../model/Tile';
-import { GenerationSteps } from '../generation/GenerationSteps';
-import { Curve } from '../model/generic/Curve';
+import { Dungeon } from './model/Dungeon';
+import { Pathway } from './model/Pathway';
+import { Room } from './model/Room';
+import { Tile } from './model/Tile';
+import { GenerationSteps } from './GenerationSteps';
+import { Curve } from '../lib/model/Curve';
 
 export class DungeonDrawer {   
     dungeon: Dungeon;

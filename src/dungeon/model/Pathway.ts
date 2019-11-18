@@ -1,4 +1,4 @@
-import { Line } from './generic/Line';
+import { Line } from '../../lib/model/Line';
 import { Room } from './Room';
 
 export class Pathway extends Line<Room> {

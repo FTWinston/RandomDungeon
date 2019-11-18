@@ -1,7 +1,7 @@
-import { Coord } from '../../model/generic/Coord';
-import { Graph } from '../../model/generic/Graph';
-import { Line } from '../../model/generic/Line';
-import { Triangle } from '../../model/generic/Triangle';
+import { Coord } from '../model/Coord';
+import { Graph } from '../model/Graph';
+import { Line } from '../model/Line';
+import { Triangle } from '../model/Triangle';
 
 export function computeDelauneyTriangulation<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
     graph: Graph<TNode, TLine>,

@@ -1,8 +1,8 @@
-import { Dungeon } from '../../model/Dungeon';
-import { SRandom } from '../SRandom';
+import { Dungeon } from '../model/Dungeon';
+import { SRandom } from '../../lib/SRandom';
 import { DelaySize } from '../DungeonGenerator';
-import { Tile } from '../../model/Tile';
-import { Curve } from '../../model/generic/Curve';
+import { Tile } from '../model/Tile';
+import { Curve } from '../../lib/model/Curve';
 import { getAdjacent } from './detectWalls';
 
 export async function generateWallCurves(

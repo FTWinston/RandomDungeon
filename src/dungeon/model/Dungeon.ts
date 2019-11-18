@@ -1,8 +1,8 @@
 import { Pathway } from './Pathway';
 import { Room } from './Room';
 import { Tile } from './Tile';
-import { Graph } from './generic/Graph';
-import { Curve } from './generic/Curve';
+import { Graph } from '../../lib/model/Graph';
+import { Curve } from '../../lib/model/Curve';
 
 export class Dungeon extends Graph<Room, Pathway> {
     seed: number;

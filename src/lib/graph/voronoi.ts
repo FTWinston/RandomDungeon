@@ -1,6 +1,6 @@
-import { Coord } from '../../model/generic/Coord';
-import { Triangle } from '../../model/generic/Triangle';
-import { Polygon } from '../../model/generic/Polygon';
+import { Coord } from '../model/Coord';
+import { Triangle } from '../model/Triangle';
+import { Polygon } from '../model/Polygon';
 
 export class Cell<TNode extends Coord<TNode>> extends Polygon<TNode> {
     constructor(public center: TNode, vertices: TNode[]) {

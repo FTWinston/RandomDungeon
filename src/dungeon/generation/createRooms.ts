@@ -1,7 +1,7 @@
-import { Dungeon } from '../../model/Dungeon';
+import { Dungeon } from '../model/Dungeon';
 import { DelaySize } from '../DungeonGenerator';
-import { Tile } from '../../model/Tile';
-import { SRandom } from '../SRandom';
+import { Tile } from '../model/Tile';
+import { SRandom } from '../../lib/SRandom';
 
 export async function createRooms(
     dungeon: Dungeon,

@@ -1,4 +1,4 @@
-import { Dungeon } from '../../model/Dungeon';
+import { Dungeon } from '../model/Dungeon';
 import { DelaySize } from '../DungeonGenerator';
 
 export async function linkLinesToGrid(

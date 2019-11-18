@@ -1,13 +1,13 @@
-import { Dungeon } from '../../model/Dungeon';
-import { Room, RoomType } from '../../model/Room';
+import { Dungeon } from '../model/Dungeon';
+import { Room, RoomType } from '../model/Room';
 import {
     computeDelauneyTriangulation,
     getUniqueLines,
     computeGabrielGraph,
     computeRelativeNeighbourhoodGraph,
     computeMinimumSpanningTree
-} from '../graph';
-import { Pathway } from '../../model/Pathway';
+} from '../../lib/graph';
+import { Pathway } from '../model/Pathway';
 import { DelaySize } from '../DungeonGenerator';
 
 export async function populateLinks(

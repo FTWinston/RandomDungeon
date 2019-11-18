@@ -1,7 +1,7 @@
-import { Dungeon } from '../../model/Dungeon';
-import { RoomType } from '../../model/Room';
+import { Dungeon } from '../model/Dungeon';
+import { RoomType } from '../model/Room';
 import { DelaySize } from '../DungeonGenerator';
-import { Tile } from '../../model/Tile';
+import { Tile } from '../model/Tile';
 
 export async function detectWalls(
     dungeon: Dungeon,

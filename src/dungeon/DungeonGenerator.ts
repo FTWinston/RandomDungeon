@@ -1,13 +1,13 @@
-import { Dungeon } from '../model/Dungeon';
+import { Dungeon } from './model/Dungeon';
 import { GenerationSteps } from './GenerationSteps';
-import { SRandom } from './SRandom';
-import { populateNodes } from './steps/populateNodes';
-import { populateLinks } from './steps/populateLinks';
-import { filterLinks } from './steps/filterLinks';
-import { createRooms } from './steps/createRooms';
-import { linkLinesToGrid } from './steps/linkLinesToGrid';
-import { detectWalls } from './steps/detectWalls';
-import { generateWallCurves } from './steps/generateWallCurves';
+import { SRandom } from '../lib/SRandom';
+import { populateNodes } from './generation/populateNodes';
+import { populateLinks } from './generation/populateLinks';
+import { filterLinks } from './generation/filterLinks';
+import { createRooms } from './generation/createRooms';
+import { linkLinesToGrid } from './generation/linkLinesToGrid';
+import { detectWalls } from './generation/detectWalls';
+import { generateWallCurves } from './generation/generateWallCurves';
 
 export enum DelaySize {
     Minimal = 10,
@@ -25,7 +25,7 @@ type GenerationStep = (
 
 export class DungeonGenerator {
     constructor(
-        public animated: boolean,
+        public animateFrom = GenerationSteps.Render,
         readonly stepReached: (step: GenerationSteps, startOfStep: boolean) => void,
         readonly redraw: () => void
     ) {
@@ -34,13 +34,6 @@ export class DungeonGenerator {
 
     async generate(dungeon: Dungeon, startStep: GenerationSteps = GenerationSteps.CreateNodes) {
         const seedGenerator = new SRandom(dungeon.seed);
-
-        const subStepReached = this.animated
-            ? async (interval: DelaySize) => {
-                this.redraw();
-                await this.delay(interval);
-            }
-            : undefined;
         
         const steps: Array<[GenerationSteps, GenerationStep]> = [
             [GenerationSteps.CreateNodes, populateNodes],
@@ -55,6 +48,13 @@ export class DungeonGenerator {
         for (const [step, operation] of steps) {
             const stepSeed = seedGenerator.next();
 
+            const subStepReached = this.animateFrom <= step
+                ? async (interval: DelaySize) => {
+                    this.redraw();
+                    await this.delay(interval);
+                }
+                : undefined;
+
             if (startStep <= step) {
                 this.stepReached(step, true);
                 operation(dungeon, stepSeed, subStepReached);
@@ -67,7 +67,7 @@ export class DungeonGenerator {
         }
         
         this.stepReached(GenerationSteps.Render, true);
-        this.animated = false; // don't animate when regenerating so the user can quickly see the results of changes
+        this.animateFrom = GenerationSteps.Render; // don't animate when regenerating so the user can quickly see the results of changes
         this.redraw();
     }
 

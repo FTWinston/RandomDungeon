@@ -1,6 +1,6 @@
-import { Coord } from '../../model/generic/Coord';
-import { Line } from '../../model/generic/Line';
-import { Polygon } from '../../model/generic/Polygon';
+import { Coord } from '../model/Coord';
+import { Line } from '../model/Line';
+import { Polygon } from '../model/Polygon';
 
 export function getUniqueLines<TNode extends Coord<TNode>, TLine extends Line<TNode>>
 (

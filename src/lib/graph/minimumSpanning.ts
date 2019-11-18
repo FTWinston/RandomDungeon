@@ -1,6 +1,6 @@
-import { Coord } from '../../model/generic/Coord';
-import { Graph } from '../../model/generic/Graph';
-import { Line } from '../../model/generic/Line';
+import { Coord } from '../model/Coord';
+import { Graph } from '../model/Graph';
+import { Line } from '../model/Line';
 
 export function computeMinimumSpanningTree<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
     graph: Graph<TNode, TLine>,

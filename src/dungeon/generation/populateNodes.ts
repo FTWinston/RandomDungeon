@@ -1,9 +1,9 @@
-import { Dungeon } from '../../model/Dungeon';
-import { Room, RoomType } from '../../model/Room';
-import { Coord2D } from '../../model/generic/Coord';
-import { Line } from '../../model/generic/Line';
-import { Graph } from '../../model/generic/Graph';
-import { SRandom } from '../SRandom';
+import { Dungeon } from '../model/Dungeon';
+import { Room, RoomType } from '../model/Room';
+import { Coord2D } from '../../lib/model/Coord';
+import { Line } from '../../lib/model/Line';
+import { Graph } from '../../lib/model/Graph';
+import { SRandom } from '../../lib/SRandom';
 import { DelaySize } from '../DungeonGenerator';
 
 export async function populateNodes(

@@ -1,15 +1,15 @@
 import * as React from 'react';
 import { Menu, NumericProperty } from './Menu';
 import { FixedCanvas } from './Canvas';
-import { Dungeon } from '../model/Dungeon';
+import { Dungeon } from '../dungeon/model/Dungeon';
 import './App.css';
-import { DungeonDrawer } from '../drawing/DungeonDrawer';
-import { DungeonGenerator } from '../generation/DungeonGenerator';
-import { GenerationSteps } from '../generation/GenerationSteps';
+import { DungeonDrawer } from '../dungeon/DungeonDrawer';
+import { DungeonGenerator } from '../dungeon/DungeonGenerator';
+import { GenerationSteps } from '../dungeon/GenerationSteps';
 
 interface State {
     dungeon?: Dungeon;
-    animating: boolean;
+    animateFrom: GenerationSteps;
 
     cellsWide: number;
     cellsHigh: number;
@@ -27,7 +27,7 @@ class App extends React.Component<{}, State> {
         super(props);
 
         this.state = {
-            animating: false,
+            animateFrom: GenerationSteps.Render,
             cellsWide: 100,
             cellsHigh: 70,
             cellSize: 10,
@@ -43,7 +43,7 @@ class App extends React.Component<{}, State> {
         return (
             <div className="App">
                 <Menu
-                    disabled={this.state.animating}
+                    disabled={this.state.animateFrom !== GenerationSteps.Render}
                     cellsWide={this.state.cellsWide}
                     cellsHigh={this.state.cellsHigh}
                     cellSize={this.state.cellSize}
@@ -74,7 +74,7 @@ class App extends React.Component<{}, State> {
             startOfStep: boolean
         ) => this.drawer.setAnimationStage(step, startOfStep);
 
-        this.generator = new DungeonGenerator(this.state.animating, stepReached, redraw);
+        this.generator = new DungeonGenerator(this.state.animateFrom, stepReached, redraw);
         
         this.createDungeon(false);
     }
@@ -101,8 +101,8 @@ class App extends React.Component<{}, State> {
             regenerateFrom = GenerationSteps.Render;
         }
 
-        if (prevState.animating !== this.state.animating) {
-            this.generator.animated = this.state.animating;
+        if (prevState.animateFrom !== this.state.animateFrom) {
+            this.generator.animateFrom = this.state.animateFrom;
         }
 
         if (prevState.nodeCount !== this.state.nodeCount) {
@@ -153,7 +153,10 @@ class App extends React.Component<{}, State> {
     }
 
     private async createDungeon(animate: boolean) {
-        this.generator.animated = animate;
+        this.generator.animateFrom = animate
+            ? GenerationSteps.CreateNodes
+            : GenerationSteps.Render;
+
         this.drawer.scale = this.state.cellSize;
 
         const dungeon = new Dungeon(
@@ -167,13 +170,13 @@ class App extends React.Component<{}, State> {
 
         this.setState({
             dungeon: dungeon,
-            animating: animate,
+            animateFrom: this.generator.animateFrom,
         });
 
         await this.generator.generate(dungeon);
         
         this.setState({
-            animating: false,
+            animateFrom: this.generator.animateFrom,
         });
     }
 }
