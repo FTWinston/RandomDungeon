@@ -4,10 +4,8 @@ import { Line } from '../model/Line';
 
 export function computeGabrielGraph<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
     graph: Graph<TNode, TLine>,
-    links: TLine[] | undefined = undefined
+    links: TLine[] = graph.lines
 ) {
-    links = links === undefined ? graph.lines : links;
-
     let graphLinks: TLine[] = [];
 
     for (let link of links) {

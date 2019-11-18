@@ -1,8 +1,10 @@
 import { Dungeon } from '../model/Dungeon';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
+import { IGenerationSettings } from '../IGenerationSettings';
 
 export async function linkLinesToGrid(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {

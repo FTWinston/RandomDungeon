@@ -1,10 +1,12 @@
 import { Dungeon } from '../model/Dungeon';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
 import { Tile } from '../model/Tile';
 import { SRandom } from '../../lib/SRandom';
+import { IGenerationSettings } from '../IGenerationSettings';
 
 export async function createRooms(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {

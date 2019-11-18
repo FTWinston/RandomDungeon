@@ -36,7 +36,7 @@ export class GenerateMenu extends React.Component<Props, State> {
         const connectivity = (e: React.ChangeEvent<HTMLInputElement>) => this.props.setNumber(NumericProperty.Connectivity, parseInt(e.target.value, 10));
 
         const slow = () => this.props.generate(true);
-        const quick = () => this.props.generate(true);
+        const quick = () => this.props.generate(false);
 
         return (
             <div className="menu__subMenu">

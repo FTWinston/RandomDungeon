@@ -4,10 +4,12 @@ import { Coord2D } from '../../lib/model/Coord';
 import { Line } from '../../lib/model/Line';
 import { Graph } from '../../lib/model/Graph';
 import { SRandom } from '../../lib/SRandom';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
+import { IGenerationSettings } from '../IGenerationSettings';
 
 export async function populateNodes(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
@@ -21,7 +23,7 @@ export async function populateNodes(
     };
 
     dungeon.nodes = [];
-    for (let i = 0; i < dungeon.nodeCount; i++) {
+    for (let i = 0; i < settings.nodeCount; i++) {
         addSpacedNode(dungeon, makeNode, dungeon.width, dungeon.height);
         
         if (subStepComplete) {

@@ -1,17 +1,17 @@
 import { Dungeon } from '../model/Dungeon';
 import { RoomType } from '../model/Room';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
 import { Tile } from '../model/Tile';
+import { IGenerationSettings } from '../IGenerationSettings';
 
 export async function detectWalls(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    
-    for (let x = 0; x < dungeon.width; x++) {
-        for (let y = 0; y < dungeon.height; y++) {
-            let tile = dungeon.grid[x][y];
+    for (const col of dungeon.grid) {
+        for (const tile of col) {
             if (tile.isFloor) {
                 continue;
             }

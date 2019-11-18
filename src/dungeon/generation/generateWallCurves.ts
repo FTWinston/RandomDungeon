@@ -1,12 +1,14 @@
 import { Dungeon } from '../model/Dungeon';
 import { SRandom } from '../../lib/SRandom';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
 import { Tile } from '../model/Tile';
 import { Curve } from '../../lib/model/Curve';
 import { getAdjacent } from './detectWalls';
+import { IGenerationSettings } from '../IGenerationSettings';
 
 export async function generateWallCurves(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
@@ -195,10 +197,7 @@ async function generateSingleWallCurve(dungeon: Dungeon, firstTile: Tile, random
         tile = next;
 
         if (subStepComplete) {
-            await subStepComplete(DelaySize.Minimal);
-
             curve.updateRenderPoints();
-
             await subStepComplete(DelaySize.Minimal);
         }
     }

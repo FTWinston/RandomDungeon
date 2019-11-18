@@ -8,10 +8,12 @@ import {
     computeMinimumSpanningTree
 } from '../../lib/graph';
 import { Pathway } from '../model/Pathway';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
+import { IGenerationSettings } from '../IGenerationSettings';
 
 export async function populateLinks(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {

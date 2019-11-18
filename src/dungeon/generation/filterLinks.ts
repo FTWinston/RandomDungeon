@@ -1,33 +1,30 @@
 import { Dungeon } from '../model/Dungeon';
 import { SRandom } from '../../lib/SRandom';
-import { DelaySize } from '../DungeonGenerator';
+import { DelaySize } from '../generateDungeon';
+import { IGenerationSettings } from '../IGenerationSettings';
+import { Pathway } from '../model/Pathway';
 
 export async function filterLinks(
     dungeon: Dungeon,
+    settings: IGenerationSettings,
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    
-    let selectingFrom, selectFraction;
+    let selectingFrom: Pathway[];
+    let selectFraction: number;
         
-    if (dungeon.connectivity < 50) {
+    if (settings.connectivity < 50) {
         dungeon.lines = dungeon.minimumSpanningLines.slice();
-        selectingFrom = [];
-        for (let line of dungeon.relativeNeighbourhoodLines) {
-            if (dungeon.lines.indexOf(line) === -1) {
-                selectingFrom.push(line);
-            }
-        }
-        selectFraction = dungeon.connectivity / 50;
+
+        selectingFrom = dungeon.relativeNeighbourhoodLines.filter(l => dungeon.lines.indexOf(l) === -1);
+
+        selectFraction = settings.connectivity / 50;
     } else {
-        selectingFrom = [];
-        for (let line of dungeon.gabrielLines) {
-            if (dungeon.relativeNeighbourhoodLines.indexOf(line) === -1) {
-                selectingFrom.push(line);
-            }
-        }
-        selectFraction = (dungeon.connectivity - 50) / 50;
         dungeon.lines = dungeon.relativeNeighbourhoodLines.slice();
+
+        selectingFrom = dungeon.gabrielLines.filter(l => dungeon.lines.indexOf(l) === -1);
+
+        selectFraction = (settings.connectivity - 50) / 50;
     }
     
     let random = new SRandom(seed);

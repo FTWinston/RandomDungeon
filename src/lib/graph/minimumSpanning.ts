@@ -4,7 +4,7 @@ import { Line } from '../model/Line';
 
 export function computeMinimumSpanningTree<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
     graph: Graph<TNode, TLine>,
-    links: TLine[] | undefined = undefined
+    links: TLine[] = graph.lines
 ) {
     let unvisitedNodes = graph.nodes.slice();
     let firstNode = unvisitedNodes.pop();
@@ -12,8 +12,7 @@ export function computeMinimumSpanningTree<TNode extends Coord<TNode>, TLine ext
         return [];
     }
     
-    links = links === undefined ? graph.lines : links;
-    let possibleLinks = links.map(l => { return { link: l, lengthSq: l.from.distanceSqTo(l.to) }; });
+    let possibleLinks = links.map(l => ({ link: l, lengthSq: l.from.distanceSqTo(l.to) }));
     possibleLinks.sort((a, b) => a.lengthSq - b.lengthSq);
 
     let visitedNodes: TNode[] = [firstNode];
