@@ -90,6 +90,8 @@ export class Menu extends React.Component<Props, State> {
             classes += ' menu__selector--active';
         }
 
-        return <li className={classes} onClick={() => this.setState({ show: menu})}>{label}</li>;
+        const click = () => this.setState({ show: menu});
+
+        return <li className={classes} onClick={click}>{label}</li>;
     }
 }

@@ -1,4 +1,4 @@
-import { SRandom } from "../SRandom";
+import { SRandom } from '../SRandom';
 
 // Adapted from https://gist.github.com/banksean/304522, which was in turn
 // Ported from Stefan Gustavson's java implementation
@@ -6,22 +6,22 @@ import { SRandom } from "../SRandom";
 
 export class SimplexNoise {
     private static grad3 = [
-        [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
-        [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
-        [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+        [1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0],
+        [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
+        [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1]
     ];
     private perm: number[];
 
     constructor(seed: number) {
-        let p = [];
-        for (let i=0; i<256; i++) {
+        const p = [];
+        for (let i = 0; i < 256; i++) {
             p[i] = i;
         }
         this.shuffle(seed, p);
 
         // To remove the need for index wrapping, double the permutation table length
-        for (let i=0; i<256; i++) {
-            p[i+256] = p[i];
+        for (let i = 0; i < 256; i++) {
+            p[i + 256] = p[i];
         }
 
         this.perm = p;
@@ -42,32 +42,32 @@ export class SimplexNoise {
 
     private dot(gi: number, x: number, y: number) {
         let g = SimplexNoise.grad3[gi];
-	    return g[0]*x + g[1]*y;
+        return g[0] * x + g[1] * y;
     }
     
     noise(xin: number, yin: number) {
         var n0, n1, n2; // Noise contributions from the three corners
 
         // Skew the input space to determine which simplex cell we're in
-        var F2 = 0.5*(Math.sqrt(3.0)-1.0);
-        var s = (xin+yin)*F2; // Hairy factor for 2D
-        var i = Math.floor(xin+s);
-        var j = Math.floor(yin+s);
-        var G2 = (3.0-Math.sqrt(3.0))/6.0;
-        var t = (i+j)*G2;
-        var X0 = i-t; // Unskew the cell origin back to (x,y) space
-        var Y0 = j-t;
-        var x0 = xin-X0; // The x,y distances from the cell origin
-        var y0 = yin-Y0;
+        var F2 = 0.5 * (Math.sqrt(3.0) - 1.0);
+        var s = (xin + yin) * F2; // Hairy factor for 2D
+        var i = Math.floor(xin + s);
+        var j = Math.floor(yin + s);
+        var G2 = (3.0 - Math.sqrt(3.0)) / 6.0;
+        var t = (i + j) * G2;
+        var X0 = i - t; // Unskew the cell origin back to (x,y) space
+        var Y0 = j - t;
+        var x0 = xin - X0; // The x,y distances from the cell origin
+        var y0 = yin - Y0;
 
         // For the 2D case, the simplex shape is an equilateral triangle.
         // Determine which simplex we are in.
         var i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
         if (x0 > y0) {
-            i1=1; j1=0; // lower triangle, XY order: (0,0)->(1,0)->(1,1)
+            i1 = 1; j1 = 0; // lower triangle, XY order: (0,0)->(1,0)->(1,1)
         }
         else {
-            i1=0; j1=1; // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+            i1 = 0; j1 = 1; // upper triangle, YX order: (0,0)->(0,1)->(1,1)
         }
 
         // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
@@ -81,26 +81,26 @@ export class SimplexNoise {
         // Work out the hashed gradient indices of the three simplex corners
         var ii = i & 255;
         var jj = j & 255;
-        var gi0 = this.perm[ii+this.perm[jj]] % 12;
-        var gi1 = this.perm[ii+i1+this.perm[jj+j1]] % 12;
-        var gi2 = this.perm[ii+1+this.perm[jj+1]] % 12;
+        var gi0 = this.perm[ii + this.perm[jj]] % 12;
+        var gi1 = this.perm[ii + i1 + this.perm[jj + j1]] % 12;
+        var gi2 = this.perm[ii + 1 + this.perm[jj + 1]] % 12;
 
         // Calculate the contribution from the three corners
-        var t0 = 0.5 - x0*x0-y0*y0;
+        var t0 = 0.5 - x0 * x0 - y0 * y0;
         if (t0 < 0) {
             n0 = 0.0;
         } else {
             t0 *= t0;
             n0 = t0 * t0 * this.dot(gi0, x0, y0);  // (x,y) of grad3 used for 2D gradient
         }
-        var t1 = 0.5 - x1*x1-y1*y1;
+        var t1 = 0.5 - x1 * x1 - y1 * y1;
         if(t1 < 0) {
             n1 = 0.0;
         } else {
             t1 *= t1;
             n1 = t1 * t1 * this.dot(gi1, x1, y1);
         }
-        var t2 = 0.5 - x2*x2-y2*y2;
+        var t2 = 0.5 - x2 * x2 - y2 * y2;
         if(t2 < 0) {
             n2 = 0.0;
         } else {

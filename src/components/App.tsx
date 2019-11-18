@@ -37,6 +37,9 @@ class App extends React.Component<{}, State> {
     }
 
     render() {
+        const setNumber = (p: NumericProperty, v: number) => this.setParameter(p, v)
+        const generate = (a: boolean) => this.createDungeon(a);
+
         return (
             <div className="App">
                 <Menu
@@ -46,10 +49,10 @@ class App extends React.Component<{}, State> {
                     cellSize={this.state.cellSize}
                     nodeCount={this.state.nodeCount}
                     connectivity={this.state.connectivity}
-                    setNumber={(p, v) => this.setParameter(p, v)}
+                    setNumber={setNumber}
 
                     seed={this.state.dungeon === undefined ? undefined : this.state.dungeon.seed}
-                    generate={(a) => this.createDungeon(a)}
+                    generate={generate}
                 />
                 <FixedCanvas
                     className="dungeonDisplay"
