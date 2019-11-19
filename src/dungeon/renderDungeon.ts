@@ -77,8 +77,8 @@ function drawRoom(room: Room, ctx: CanvasRenderingContext2D, scale: number) {
 }
 
 function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, scale: number) {
-    if (tile.isWall && !tile.isFloor) {
-        ctx.fillStyle = '#000';
+    if (tile.isWall/* && !tile.isFloor*/) {
+        ctx.fillStyle = tile.isFloor ? '#000' : '#333';
         ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
     } else if (tile.isFloor) {
         /*

@@ -66,8 +66,8 @@ export function determineRenderSettings(
 
         case GenerationSteps.Render:
             drawGrid = true;
-            drawWalls = true;
-            fillOutside = true;
+            //drawWalls = true;
+            //fillOutside = true;
             break;
     }
 
