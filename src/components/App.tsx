@@ -13,6 +13,7 @@ interface State {
     dungeon?: Dungeon;
     cellSize: number;
     settings: IGenerationSettings;
+    generating: boolean;
 }
 
 class App extends React.Component<{}, State> {
@@ -23,6 +24,7 @@ class App extends React.Component<{}, State> {
 
         this.state = {
             cellSize: 10,
+            generating: true,
             settings: {
                 seed: 0,
                 generateFrom: GenerationSteps.CreateNodes,
@@ -44,7 +46,7 @@ class App extends React.Component<{}, State> {
         return (
             <div className="App">
                 <Menu
-                    disabled={this.state.settings.animateFrom !== GenerationSteps.Render}
+                    disabled={this.state.generating}
                     cellsWide={this.state.settings.cellsWide}
                     cellsHigh={this.state.settings.cellsHigh}
                     cellSize={this.state.cellSize}
@@ -97,14 +99,26 @@ class App extends React.Component<{}, State> {
         }
 
         if (regenerateFrom !== undefined) {
-            const settings: IGenerationSettings = {
-                ...this.state.settings,
-                animateFrom: GenerationSteps.Render,
-                generateFrom: regenerateFrom,
-            };
-
-            regenerateDungeon(this.state.dungeon!, settings);
+            this.updateDungeon(regenerateFrom);
         }
+    }
+
+    private async updateDungeon(regenerateFrom: GenerationSteps) {
+        const settings: IGenerationSettings = {
+            ...this.state.settings,
+            animateFrom: GenerationSteps.Render,
+            generateFrom: regenerateFrom,
+        };
+
+        this.setState({
+            generating: true,
+        });
+
+        await regenerateDungeon(this.state.dungeon!, settings);
+
+        this.setState({
+            generating: false,
+        });
     }
 
     private setParameter(property: NumericProperty, value: number) {
@@ -158,28 +172,26 @@ class App extends React.Component<{}, State> {
 
         const seed = Math.random();
 
-        const redraw = (generating: Dungeon, stage: GenerationSteps, stageComplete: boolean) =>
-            renderDungeon(generating, this.canvas.ctx, this.state.cellSize, determineRenderSettings(stage, stageComplete));
-
         const settings: IGenerationSettings = {
+            ...this.state.settings,
             animateFrom,
             generateFrom: GenerationSteps.CreateNodes,
-            cellsWide: this.state.settings.cellsWide,
-            cellsHigh: this.state.settings.cellsHigh,
-            redraw,
-            connectivity: this.state.settings.connectivity,
-            nodeCount: this.state.settings.nodeCount,
             seed,
         };
 
+        this.state.settings.animateFrom = GenerationSteps.Render;
+
         this.setState({
             settings,
+            dungeon: undefined,
+            generating: true,
         });
 
         const dungeon = await generateDungeon(settings);
 
         this.setState({
             dungeon,
+            generating: false,
         });
     }
 }

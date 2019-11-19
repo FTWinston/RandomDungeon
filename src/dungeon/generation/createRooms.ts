@@ -12,11 +12,7 @@ export async function createRooms(
 ) {
     linkNodesToGrid(dungeon);
 
-    if (subStepComplete) {
-        await subStepComplete(DelaySize.Large);
-    }
-
-    growRooms(dungeon, seed, subStepComplete);
+    await growRooms(dungeon, seed, subStepComplete);
 }
 
 function linkNodesToGrid(dungeon: Dungeon) {
@@ -42,7 +38,11 @@ function linkNodesToGrid(dungeon: Dungeon) {
     }
 }
 
-async function growRooms(dungeon: Dungeon, seed: number, subStepComplete?: (interval: DelaySize) => Promise<void>) {
+async function growRooms(
+    dungeon: Dungeon,
+    seed: number,
+    subStepComplete?: (interval: DelaySize) => Promise<void>
+) {
     let random = new SRandom(seed);
     for (let node of dungeon.nodes) {
         let nodeX = Math.floor(node.x);

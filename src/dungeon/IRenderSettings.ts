@@ -36,15 +36,23 @@ export function determineRenderSettings(
 
         case GenerationSteps.CreateRooms:
             drawNodeLinks = true;
+            drawGrid = true;
 
             if (stageComplete) {
-                drawGrid = true;
                 nodeAlpha = 0;
             }
             break;
         case GenerationSteps.ExpandLines:
             drawGrid = true;
-            drawNodeLinks = !stageComplete;
+            nodeAlpha = 0;
+
+            if (!stageComplete) {
+                drawNodeLinks = true;
+            }
+            break;
+
+        case GenerationSteps.DetectWalls:
+            drawGrid = true;
             nodeAlpha = 0;
             break;
 
