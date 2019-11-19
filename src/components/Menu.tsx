@@ -22,6 +22,7 @@ interface Props {
 
     setNumber: (property: NumericProperty, value: number) => void;
     generate: (animate: boolean) => void;
+    finish: () => void;
 }
 
 const enum SubMenu {
@@ -59,6 +60,7 @@ export class Menu extends React.Component<Props, State> {
                     setNumber={this.props.setNumber}
                     seed={this.props.seed}
                     generate={this.props.generate}
+                    finish={this.props.finish}
                 />
                 );
                 break;

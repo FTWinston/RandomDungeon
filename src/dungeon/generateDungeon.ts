@@ -29,7 +29,7 @@ export async function generateDungeon(
     settings: IGenerationSettings,
 ) {
     const dungeon = new Dungeon();
-    regenerateDungeon(dungeon, settings);
+    await regenerateDungeon(dungeon, settings);
     return dungeon;
 }
 

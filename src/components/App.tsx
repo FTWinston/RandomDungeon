@@ -42,6 +42,7 @@ class App extends React.Component<{}, State> {
     render() {
         const setNumber = (prop: NumericProperty, val: number) => this.setParameter(prop, val)
         const generate = (animate: boolean) => this.createDungeon(animate);
+        const finish = () => this.state.settings.animateFrom = GenerationSteps.Render;
 
         return (
             <div className="App">
@@ -56,6 +57,7 @@ class App extends React.Component<{}, State> {
 
                     seed={this.state.settings.seed === 0 ? undefined : this.state.settings.seed}
                     generate={generate}
+                    finish={finish}
                 />
                 <FixedCanvas
                     className="dungeonDisplay"
