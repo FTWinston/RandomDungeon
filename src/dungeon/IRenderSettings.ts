@@ -14,7 +14,7 @@ export function determineRenderSettings(
     generationStage = GenerationSteps.Render,
     stageComplete: boolean = true,
 ): IRenderSettings {
-    let nodeAlpha = 1;
+    let nodeAlpha = 0;
     let drawGraph = false;
     let drawNodeLinks = false;
     let drawGrid = false;
@@ -24,13 +24,16 @@ export function determineRenderSettings(
 
     switch (generationStage) {
         case GenerationSteps.CreateNodes:
+            nodeAlpha = 1;
             break;
 
         case GenerationSteps.LinkNodes:
+            nodeAlpha = 1;
             drawGraph = true;
             break;
 
         case GenerationSteps.FilterLinks:
+            nodeAlpha = 1;
             drawNodeLinks = true;
             break;
 
@@ -38,13 +41,12 @@ export function determineRenderSettings(
             drawNodeLinks = true;
             drawGrid = true;
 
-            if (stageComplete) {
-                nodeAlpha = 0;
+            if (!stageComplete) {
+                nodeAlpha = 1;
             }
             break;
         case GenerationSteps.ExpandLines:
             drawGrid = true;
-            nodeAlpha = 0;
 
             if (!stageComplete) {
                 drawNodeLinks = true;
@@ -53,13 +55,11 @@ export function determineRenderSettings(
 
         case GenerationSteps.DetectWalls:
             drawGrid = true;
-            nodeAlpha = 0;
             break;
 
         case GenerationSteps.CurveWalls:
             drawGrid = true;
             drawWalls = true;
-            nodeAlpha = 0;
 
             highlightWallCurves = !stageComplete;
             break;
@@ -68,8 +68,6 @@ export function determineRenderSettings(
             drawGrid = true;
             drawWalls = true;
             fillOutside = true;
-            drawGrid = true;
-            nodeAlpha = 0;
             break;
     }
 
