@@ -2,7 +2,7 @@ import { GenerationSteps } from './GenerationSteps';
 
 export interface IRenderSettings {
     nodeAlpha: number;
-    drawVoronoi: boolean;
+    regionAlpha: number;
     drawGraph: boolean;
     drawNodeLinks: boolean;
     drawGrid: boolean;
@@ -16,7 +16,7 @@ export function determineRenderSettings(
     stageComplete: boolean = true,
 ): IRenderSettings {
     let nodeAlpha = 0;
-    let drawVoronoi = false;
+    let regionAlpha = 0;
     let drawGraph = false;
     let drawNodeLinks = false;
     let drawGrid = false;
@@ -27,34 +27,37 @@ export function determineRenderSettings(
     switch (generationStage) {
         case GenerationSteps.CreateNodes:
             nodeAlpha = 1;
-            drawVoronoi = true;
+            drawGrid = true;
+            break;
+
+        case GenerationSteps.AssociateTiles:
+            nodeAlpha = 1;
+            regionAlpha = 0.66;
+            drawGrid = true;
             break;
 
         case GenerationSteps.LinkNodes:
             nodeAlpha = 1;
+            regionAlpha = 0.33;
             drawGraph = true;
-            drawVoronoi = true;
+            drawGrid = true;
             break;
 
         case GenerationSteps.FilterLinks:
-            nodeAlpha = 1;
+            nodeAlpha = 0.75;
+            regionAlpha = 0.25;
             drawNodeLinks = true;
+            drawGrid = true;
+            break;
+
+        case GenerationSteps.ExpandLines:
+            regionAlpha = 0.25;
+            drawGrid = true;
             break;
 
         case GenerationSteps.CreateRooms:
-            drawNodeLinks = true;
+            regionAlpha = 0.25;
             drawGrid = true;
-
-            if (!stageComplete) {
-                nodeAlpha = 1;
-            }
-            break;
-        case GenerationSteps.ExpandLines:
-            drawGrid = true;
-
-            if (!stageComplete) {
-                drawNodeLinks = true;
-            }
             break;
 
         case GenerationSteps.DetectWalls:
@@ -70,15 +73,14 @@ export function determineRenderSettings(
 
         case GenerationSteps.Render:
             drawGrid = true;
-            drawVoronoi = true;
-            //drawWalls = true;
-            //fillOutside = true;
+            drawWalls = true;
+            fillOutside = true;
             break;
     }
 
     return {
         nodeAlpha,
-        drawVoronoi,
+        regionAlpha,
         drawGraph,
         drawNodeLinks,
         drawGrid,

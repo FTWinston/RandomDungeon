@@ -9,6 +9,8 @@ import { linkLinesToGrid } from './generation/linkLinesToGrid';
 import { detectWalls } from './generation/detectWalls';
 import { generateWallCurves } from './generation/generateWallCurves';
 import { IGenerationSettings } from './IGenerationSettings';
+import { associateTilesWithNodes } from './generation/associateTilesWithNodes';
+import { Tile } from './model/Tile';
 
 export enum DelaySize {
     Minimal = 10,
@@ -39,14 +41,18 @@ export async function regenerateDungeon(
 ) {
     dungeon.width = settings.cellsWide;
     dungeon.height = settings.cellsHigh;
+
+    createTiles(dungeon);
+
     const seedGenerator = new SRandom(settings.seed);
     
     const steps: Array<[GenerationSteps, GenerationStep]> = [
         [GenerationSteps.CreateNodes, populateNodes],
+        [GenerationSteps.AssociateTiles, associateTilesWithNodes],
         [GenerationSteps.LinkNodes, populateLinks],
         [GenerationSteps.FilterLinks, filterLinks],
-        [GenerationSteps.CreateRooms, createRooms],
         [GenerationSteps.ExpandLines, linkLinesToGrid],
+        [GenerationSteps.CreateRooms, createRooms],
         [GenerationSteps.DetectWalls, detectWalls],
         [GenerationSteps.CurveWalls, generateWallCurves],
     ];
@@ -58,10 +64,12 @@ export async function regenerateDungeon(
             continue;
         }
 
-        const animateThisStep = settings.animateFrom <= step;
-
-        const subStepReached = animateThisStep
+        const subStepReached = settings.animateFrom <= step
             ? async (interval: DelaySize) => {
+                if (settings.animateFrom > step) {
+                    return; // give up on animation
+                }
+
                 settings.redraw(dungeon, step, false);
                 await delay(interval);
             }
@@ -69,13 +77,25 @@ export async function regenerateDungeon(
         
         await operation(dungeon, settings, stepSeed, subStepReached);
         
-        if (animateThisStep) {
+        if (settings.animateFrom <= step) {
             settings.redraw(dungeon, step, true);
             await delay(DelaySize.Large);
         }
     }
 
     settings.redraw(dungeon, GenerationSteps.Render, true);
+}
+
+function createTiles(dungeon: Dungeon) {
+    dungeon.grid = [];
+    for (let x = 0; x < dungeon.width; x++) {
+        let col = new Array<Tile>(dungeon.height);
+        dungeon.grid[x] = col;
+
+        for (let y = 0; y < dungeon.height; y++) {
+            col[y] = new Tile(x, y);
+        }
+    }
 }
 
 function delay(milliseconds: number): Promise<void> {

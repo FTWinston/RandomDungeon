@@ -25,13 +25,7 @@ export async function detectWalls(
                 }
             }
 
-            if (tile.isFloor) {
-                continue;
-            }
-
             // artificial rooms should have "corner" wall nodes filled in
-            // TODO: wall curves still "cut the corner" and then a new loop is added to fill the cut corner in.
-            // That needs to change if these go in.
             toTest = getAdjacent(dungeon, tile, false, true);
             for (let test of toTest) {
                 if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {

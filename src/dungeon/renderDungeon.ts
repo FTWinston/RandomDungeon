@@ -4,9 +4,6 @@ import { Room } from './model/Room';
 import { Tile } from './model/Tile';
 import { Curve } from '../lib/model/Curve';
 import { IRenderSettings } from './IRenderSettings';
-import { Cell } from '../lib/graph/voronoi';
-import { Coord2D } from '../lib/model/Coord';
-import { randomColor } from '../lib/randomColor';
 
 export function renderDungeon(   
     dungeon: Dungeon,
@@ -17,7 +14,7 @@ export function renderDungeon(
     ctx.clearRect(0, 0, dungeon.width * scale, dungeon.height * scale);
 
     if (settings.drawGrid) {
-        drawTileGrid(ctx, dungeon, scale);
+        drawTileGrid(ctx, dungeon, scale, settings.regionAlpha);
     }
 
     if (settings.drawGraph) {
@@ -36,15 +33,6 @@ export function renderDungeon(
         }
         ctx.lineCap = 'butt';
     }
-
-    if (settings.drawVoronoi) {
-        ctx.globalAlpha = 0.25;
-        for (const cell of dungeon.voronoiCells) {
-            ctx.fillStyle = randomColor();
-            fillCell(cell, ctx, scale);
-        }
-        ctx.globalAlpha = 1;
-    }
     
     if (settings.drawNodeLinks) {
         ctx.lineWidth = 1;
@@ -57,18 +45,18 @@ export function renderDungeon(
     if (settings.nodeAlpha > 0) {
         ctx.globalAlpha = settings.nodeAlpha;
         for (let i = 0; i < dungeon.nodes.length; i++) {
-            drawRoom(dungeon.nodes[i], ctx, scale);
+            drawNode(dungeon.nodes[i], ctx, scale);
         }
         ctx.globalAlpha = 1;
     }
 }
 
-function drawTileGrid(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
+function drawTileGrid(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number, regionAlpha: number) {
     ctx.lineWidth = 1;
 
     for (const col of dungeon.grid) {
         for (const cell of col) {
-            drawTile(cell, ctx, scale);
+            drawTile(cell, ctx, scale, regionAlpha);
         }
     }
 }
@@ -80,7 +68,7 @@ function drawPath(pathway: Pathway, ctx: CanvasRenderingContext2D, scale: number
     ctx.stroke();
 }
 
-function drawRoom(room: Room, ctx: CanvasRenderingContext2D, scale: number) {
+function drawNode(room: Room, ctx: CanvasRenderingContext2D, scale: number) {
     ctx.fillStyle = '#c00';
     
     ctx.beginPath();
@@ -88,8 +76,8 @@ function drawRoom(room: Room, ctx: CanvasRenderingContext2D, scale: number) {
     ctx.fill();
 }
 
-function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, scale: number) {
-    if (tile.isWall/* && !tile.isFloor*/) {
+function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, scale: number, regionAlpha: number) {
+    if (tile.isWall && !tile.isFloor) {
         ctx.fillStyle = '#333';
         ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
     } else if (tile.isFloor) {
@@ -105,23 +93,13 @@ function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, scale: number) {
         ctx.fillStyle = '#666';
         ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
     }
-}
 
-function fillCell(cell: Cell<Coord2D>, ctx: CanvasRenderingContext2D, scale: number) {
-    ctx.beginPath();
-
-    let first = true;
-    for (const vertex of cell.vertices) {
-        if (first) {
-            first = false;
-            ctx.moveTo(vertex.x * scale, vertex.y * scale);
-        }
-        else {
-            ctx.lineTo(vertex.x * scale, vertex.y * scale);
-        }
+    if (regionAlpha > 0 && tile.room !== null) {
+        ctx.globalAlpha = regionAlpha;
+        ctx.fillStyle = tile.room.color;
+        ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
+        ctx.globalAlpha = 1;
     }
-
-    ctx.fill();
 }
 
 function drawGraph(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {

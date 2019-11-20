@@ -62,11 +62,6 @@ export async function linkLinesToGrid(
             }
             
             y += gradient;
-        }          
-    
-        if (subStepComplete) {
-            await subStepComplete(DelaySize.Small);
         }
     }
-
 }

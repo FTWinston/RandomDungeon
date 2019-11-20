@@ -1,6 +1,5 @@
 import { Dungeon } from '../model/Dungeon';
 import { DelaySize } from '../generateDungeon';
-import { Tile } from '../model/Tile';
 import { SRandom } from '../../lib/SRandom';
 import { IGenerationSettings } from '../IGenerationSettings';
 
@@ -16,17 +15,6 @@ export async function createRooms(
 }
 
 function linkNodesToGrid(dungeon: Dungeon) {
-    // populate the grid with blank tiles
-    dungeon.grid = [];
-    for (let x = 0; x < dungeon.width; x++) {
-        let col = new Array<Tile>(dungeon.height);
-        dungeon.grid[x] = col;
-
-        for (let y = 0; y < dungeon.height; y++) {
-            col[y] = new Tile(x, y);
-        }
-    }
-
     // link up the nodes to the tiles that they touch
     for (let node of dungeon.nodes) {
         let x = Math.floor(node.x);
@@ -126,7 +114,7 @@ async function growRooms(
         for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
                 let tile = dungeon.grid[x][y];
-                if (tile.room === null && (filter === undefined || filter(x, y))) {
+                if (filter === undefined || filter(x, y)) {
                     tile.isFloor = true;
                     tile.room = node;
                 }
