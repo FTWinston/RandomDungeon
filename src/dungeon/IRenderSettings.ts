@@ -1,13 +1,14 @@
 import { GenerationSteps } from './GenerationSteps';
 
 export interface IRenderSettings {
-    nodeAlpha: number,
-    drawGraph: boolean,
-    drawNodeLinks: boolean,
-    drawGrid: boolean,
-    drawWalls: boolean,
-    highlightWallCurves: boolean,
-    fillOutside: boolean,
+    nodeAlpha: number;
+    drawVoronoi: boolean;
+    drawGraph: boolean;
+    drawNodeLinks: boolean;
+    drawGrid: boolean;
+    drawWalls: boolean;
+    highlightWallCurves: boolean;
+    fillOutside: boolean;
 }
 
 export function determineRenderSettings(   
@@ -15,6 +16,7 @@ export function determineRenderSettings(
     stageComplete: boolean = true,
 ): IRenderSettings {
     let nodeAlpha = 0;
+    let drawVoronoi = false;
     let drawGraph = false;
     let drawNodeLinks = false;
     let drawGrid = false;
@@ -25,11 +27,13 @@ export function determineRenderSettings(
     switch (generationStage) {
         case GenerationSteps.CreateNodes:
             nodeAlpha = 1;
+            drawVoronoi = true;
             break;
 
         case GenerationSteps.LinkNodes:
             nodeAlpha = 1;
             drawGraph = true;
+            drawVoronoi = true;
             break;
 
         case GenerationSteps.FilterLinks:
@@ -66,6 +70,7 @@ export function determineRenderSettings(
 
         case GenerationSteps.Render:
             drawGrid = true;
+            drawVoronoi = true;
             //drawWalls = true;
             //fillOutside = true;
             break;
@@ -73,6 +78,7 @@ export function determineRenderSettings(
 
     return {
         nodeAlpha,
+        drawVoronoi,
         drawGraph,
         drawNodeLinks,
         drawGrid,

@@ -1,13 +1,11 @@
 import { Coord } from '../model/Coord';
-import { Graph } from '../model/Graph';
-import { Line } from '../model/Line';
 import { Triangle } from '../model/Triangle';
 
-export function computeDelauneyTriangulation<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
-    graph: Graph<TNode, TLine>,
+export function computeDelauneyTriangulation<TNode extends Coord<TNode>>(
+    nodes: TNode[],
     superTriangle: [TNode, TNode, TNode]
 ) {
-    if (graph.nodes.length < 3) {
+    if (nodes.length < 3) {
         return [];
     }
 
@@ -15,7 +13,7 @@ export function computeDelauneyTriangulation<TNode extends Coord<TNode>, TLine e
     let triangulation: Triangle<TNode>[] = [];
     triangulation.push(new Triangle(superTriangle));
 
-    for (let node of graph.nodes) {
+    for (let node of nodes) {
         // find all triangles that are no longer valid due to this node's insertion
         let badTriangles: Triangle<TNode>[] = [];
         for (let triangle of triangulation) {

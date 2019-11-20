@@ -12,6 +12,10 @@ export function computeVoronoiCells<TNode extends Coord<TNode>>(
     nodes: TNode[],
     triangles: Triangle<TNode>[]
 ) {
+    if (triangles.length === 0) {
+        return [];
+    }
+
     return nodes.map(node => {
         // Firstly, get all triangles that have this vertex.
         const unsortedTriangles = triangles
