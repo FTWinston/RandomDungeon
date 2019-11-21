@@ -211,7 +211,7 @@ async function generateSingleWallCurve(dungeon: Dungeon, firstTile: Tile, random
     return curve;
 }
 
-function pickBestAdjacentWallTileOrthogonalThenDiagonal(
+export function pickBestAdjacentWallTileOrthogonalThenDiagonal(
     dungeon: Dungeon,
     from: Tile,
     filter: (tile: Tile) => boolean
@@ -229,8 +229,8 @@ function pickBestAdjacentWallTile(
     diagonal: boolean,
     filter: (tile: Tile) => boolean
 ) {
-    let bestTile = undefined;
-    let bestNumAdjacentFloorTiles = 0;
+    let bestTile: Tile | undefined;
+    let bestNumAdjacentNonWallTiles = 0;
 
     let toTest = getAdjacent(dungeon, from, orthogonal, diagonal);
     for (let tile of toTest) {
@@ -238,17 +238,17 @@ function pickBestAdjacentWallTile(
             continue;
         }
 
-        let numAdjacentFloorTiles = 0;
+        let numAdjacentNonWallTiles = 0;
         let allAdjacent = getAdjacent(dungeon, tile, true, true);
 
         for (let adjacent of allAdjacent) {
-            if (adjacent.isFloor && !adjacent.isWall) {
-                numAdjacentFloorTiles ++;
+            if (!adjacent.isWall) {
+                numAdjacentNonWallTiles++;
             }
         }
 
-        if (numAdjacentFloorTiles > bestNumAdjacentFloorTiles) {
-            bestNumAdjacentFloorTiles = numAdjacentFloorTiles;
+        if (numAdjacentNonWallTiles > bestNumAdjacentNonWallTiles) {
+            bestNumAdjacentNonWallTiles = numAdjacentNonWallTiles;
             bestTile = tile;
         }
     }
