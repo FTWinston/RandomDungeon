@@ -22,6 +22,7 @@ interface Props {
 
     setNumber: (property: NumericProperty, value: number) => void;
     generate: (animate: boolean) => void;
+    skip: () => void;
     finish: () => void;
 }
 
@@ -60,6 +61,7 @@ export class Menu extends React.Component<Props, State> {
                     setNumber={this.props.setNumber}
                     seed={this.props.seed}
                     generate={this.props.generate}
+                    skip={this.props.skip}
                     finish={this.props.finish}
                 />
                 );

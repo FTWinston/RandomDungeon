@@ -14,6 +14,7 @@ interface Props {
 
     setNumber: (property: NumericProperty, value: number) => void;
     generate: (animate: boolean) => void;
+    skip: () => void;
     finish: () => void;
 }
 
@@ -23,9 +24,41 @@ export const GenerateMenu: FunctionComponent<Props> = props => {
     const scale = (e: React.ChangeEvent<HTMLInputElement>) => props.setNumber(NumericProperty.CellSize, parseInt(e.target.value, 10));
     const nodes = (e: React.ChangeEvent<HTMLInputElement>) => props.setNumber(NumericProperty.NodeCount, parseInt(e.target.value, 10));
     const connectivity = (e: React.ChangeEvent<HTMLInputElement>) => props.setNumber(NumericProperty.Connectivity, parseInt(e.target.value, 10));
-
+    
     const slow = () => props.generate(true);
     const quick = () => props.generate(false);
+
+    const button1 = props.disabled
+        ? (
+            <input
+                type="button"
+                onClick={props.skip}
+                value="Skip step"
+            />
+        )
+        : (
+            <input
+                type="button"
+                onClick={slow}
+                value="Generate slowly"
+            />    
+        );
+
+    const button2 = props.disabled
+        ? (
+            <input
+                type="button"
+                onClick={props.finish}
+                value="Finish!"
+            />
+        )
+        : (
+            <input
+                type="button"
+                onClick={quick}
+                value="Generate quickly"
+            />
+        );
 
     return (
         <div className="menu__subMenu">
@@ -84,24 +117,8 @@ export const GenerateMenu: FunctionComponent<Props> = props => {
                 />
             </label>
 
-            <input
-                type="button"
-                onClick={slow}
-                value="Generate slowly"
-                disabled={props.disabled}
-            />
-            <input
-                type="button"
-                onClick={quick}
-                value="Generate quickly"
-                disabled={props.disabled}
-            />
-            <input
-                type="button"
-                onClick={props.finish}
-                value="Finish!"
-                disabled={!props.disabled}
-            />
+            {button1}
+            {button2}
         </div>
     );
 }
