@@ -30,7 +30,7 @@ export async function generateWallCurves(
 }
 
 async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRandom, subStepComplete?: (interval: DelaySize) => Promise<void>) {
-    const mainCurve = await generateSingleWallCurve(dungeon, firstTile, random, subStepComplete);
+    const mainCurve = await generateSingleWallCurve(dungeon, firstTile, subStepComplete);
 
     while (true) {
         // See if we could have taken a different path at any point.
@@ -132,75 +132,71 @@ function checkForCurveLoops(dungeon: Dungeon, mainCurve: Curve) {
     }
 }
 
-async function generateSingleWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRandom, subStepComplete?: (interval: DelaySize) => Promise<void>) {
+export async function generateSingleWallCurve(dungeon: Dungeon, firstTile: Tile, subStepComplete?: (interval: DelaySize) => Promise<void>) {
     const curve = new Curve();
     dungeon.walls.push(curve);
+
+    let prevTile: Tile | undefined = firstTile;
 
     // If there's an adjacent tile that's already part of a wall curve, start from that instead.
     const actualFirstTile = getAdjacent(dungeon, firstTile, true, true)
         .find(t => t.isWall && t.isFloor);
     if (actualFirstTile !== undefined) {
         curve.keyPoints.push(actualFirstTile);
+        firstTile = actualFirstTile;
     }
 
-    curve.keyPoints.push(firstTile);
-    firstTile.isFloor = true;
+    curve.keyPoints.push(prevTile);
+    prevTile.isFloor = true;
 
-    // Pick next tile, keep looping. When there isn't a next one, stop. Initially, only look orthogonally.
-    let tile = pickBestAdjacentWallTileOrthogonalThenDiagonal(
-        dungeon,
-        firstTile,
-        t => !t.isFloor && t.isWall
-    );
-
-    if (tile === undefined) {
-        // Do the same check agains, but don't ignore tiles that are part of walls. This will be the last one.
-        tile = pickBestAdjacentWallTileOrthogonalThenDiagonal(
+    do {
+        // Pick next tile, keep looping. When there isn't a next one, stop. Initially, only look orthogonally.
+        let tile = pickBestAdjacentWallTileOrthogonalThenDiagonal(
             dungeon,
-            firstTile,
-            t => t.isWall
+            prevTile,
+            t => !t.isFloor && t.isWall
         );
-    }
-    
-    let prevTile = firstTile;
-    while (tile !== undefined) {
-        // TODO: caves should be more likely to add mid-vertices and get squiggly shapes
-        // if (tile.room !== null || tile === firstTile || random.nextInRange(0, 1) < 0.2) {
-        curve.keyPoints.push(tile);
-        // }
-        
-        // if the next one is the first one, note that this is a loop and stop.
+
+        if (tile === undefined) {
+            // Do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
+            const lastTile = curve.keyPoints.length > 2
+                ? curve.keyPoints[curve.keyPoints.length - 2]
+                : undefined;
+
+            tile = pickBestAdjacentWallTileOrthogonalThenDiagonal(
+                dungeon,
+                prevTile,
+                t => t.isWall && t !== lastTile
+            );
+            prevTile = undefined;
+        }
+        else {
+            prevTile = tile;
+        }
+
         if (tile === firstTile) {
             curve.isLoop = true;
             break;
         }
-        
+
+        if (tile === undefined) {
+            break;
+        }
+
+        curve.keyPoints.push(tile);
+
         if (tile.isFloor) {
             break; // intersected a(nother) curve, so end this one
         }
+
         tile.isFloor = true;
         
-        let next = pickBestAdjacentWallTileOrthogonalThenDiagonal(
-            dungeon,
-            tile,
-            t => !t.isFloor && t.isWall && t !== prevTile
-        );
-        if (next === undefined) {
-            // do the same check again, but don't ignore tiles that are part of walls. This will be the last one.
-            next = pickBestAdjacentWallTileOrthogonalThenDiagonal(
-                dungeon,
-                tile,
-                t => t.isWall && t !== prevTile
-            );
-        }
-        prevTile = tile;
-        tile = next;
-
         if (subStepComplete) {
             curve.updateRenderPoints();
             await subStepComplete(DelaySize.Minimal);
         }
-    }
+
+    } while (prevTile !== undefined)
 
     curve.updateRenderPoints();
 
