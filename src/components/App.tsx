@@ -14,6 +14,7 @@ interface State {
     cellSize: number;
     settings: IGenerationSettings;
     generating: boolean;
+    preserveSeed: boolean;
 }
 
 class App extends React.Component<{}, State> {
@@ -25,6 +26,7 @@ class App extends React.Component<{}, State> {
         this.state = {
             cellSize: 10,
             generating: true,
+            preserveSeed: false,
             settings: {
                 seed: 0,
                 generateFrom: GenerationSteps.CreateNodes,
@@ -33,8 +35,11 @@ class App extends React.Component<{}, State> {
                 cellsHigh: 70,
                 nodeCount: 25,
                 connectivity: 50,
-                redraw: (dungeon: Dungeon, stage: GenerationSteps, stageComplete: boolean) =>
-                    renderDungeon(dungeon, this.canvas.ctx, this.state.cellSize, determineRenderSettings(stage, stageComplete)),
+                redraw: (dungeon: Dungeon, stage: GenerationSteps, stageComplete: boolean) => { 
+                    if (this.canvas !== undefined) {
+                        renderDungeon(dungeon, this.canvas.ctx, this.state.cellSize, determineRenderSettings(stage, stageComplete))
+                    }   
+                },
             }
         };
     }
@@ -44,6 +49,9 @@ class App extends React.Component<{}, State> {
         const generate = (animate: boolean) => this.createDungeon(animate);
         const skip = () => this.state.settings.animateFrom++;
         const finish = () => this.state.settings.animateFrom = GenerationSteps.Render;
+
+        const setSeed = (val: number) => { this.state.settings.seed = val; this.setState({}); };
+        const setPreserveSeed = (val: boolean) => this.setState({ preserveSeed: val });
 
         return (
             <div className="App">
@@ -57,6 +65,10 @@ class App extends React.Component<{}, State> {
                     setNumber={setNumber}
 
                     seed={this.state.settings.seed === 0 ? undefined : this.state.settings.seed}
+                    preserveSeed={this.state.preserveSeed}
+                    setSeed={setSeed}
+                    setPreserveSeed={setPreserveSeed}
+
                     generate={generate}
                     skip={skip}
                     finish={finish}
@@ -174,7 +186,9 @@ class App extends React.Component<{}, State> {
             ? GenerationSteps.CreateNodes
             : GenerationSteps.Render;
 
-        const seed = Math.random();
+        const seed = this.state.preserveSeed
+            ? this.state.settings.seed
+            : Math.random();
 
         const settings: IGenerationSettings = {
             ...this.state.settings,

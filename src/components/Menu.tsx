@@ -18,7 +18,11 @@ interface Props {
     cellSize: number;
     nodeCount: number;
     connectivity: number;
+
     seed?: number;
+    preserveSeed: boolean;
+    setSeed: (val: number) => void;
+    setPreserveSeed: (val: boolean) => void;
 
     setNumber: (property: NumericProperty, value: number) => void;
     generate: (animate: boolean) => void;
@@ -59,10 +63,14 @@ export class Menu extends React.Component<Props, State> {
                     nodeCount={this.props.nodeCount}
                     connectivity={this.props.connectivity}
                     setNumber={this.props.setNumber}
-                    seed={this.props.seed}
                     generate={this.props.generate}
                     skip={this.props.skip}
                     finish={this.props.finish}
+                    
+                    seed={this.props.seed}
+                    preserveSeed={this.props.preserveSeed}
+                    setSeed={this.props.setSeed}
+                    setPreserveSeed={this.props.setPreserveSeed}
                 />
                 );
                 break;

@@ -10,7 +10,11 @@ interface Props {
     cellSize: number;
     nodeCount: number;
     connectivity: number;
+
     seed?: number;
+    preserveSeed: boolean;
+    setSeed: (val: number) => void;
+    setPreserveSeed: (val: boolean) => void;
 
     setNumber: (property: NumericProperty, value: number) => void;
     generate: (animate: boolean) => void;
@@ -25,7 +29,7 @@ export const GenerateMenu: FunctionComponent<Props> = props => {
     const nodes = (e: React.ChangeEvent<HTMLInputElement>) => props.setNumber(NumericProperty.NodeCount, parseInt(e.target.value, 10));
     const connectivity = (e: React.ChangeEvent<HTMLInputElement>) => props.setNumber(NumericProperty.Connectivity, parseInt(e.target.value, 10));
     
-    const slow = () => props.generate(true);
+    const slow =  () => props.generate(true);
     const quick = () => props.generate(false);
 
     const button1 = props.disabled
@@ -59,6 +63,16 @@ export const GenerateMenu: FunctionComponent<Props> = props => {
                 value="Generate quickly"
             />
         );
+
+    const changeSeed = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value !== '') {
+            props.setSeed(e.currentTarget.valueAsNumber);
+        }
+    };
+
+    const changePreserve = (e: React.ChangeEvent<HTMLInputElement>) => {
+        props.setPreserveSeed(e.target.checked);
+    };
 
     return (
         <div className="menu__subMenu">
@@ -119,6 +133,12 @@ export const GenerateMenu: FunctionComponent<Props> = props => {
 
             {button1}
             {button2}
+            
+            <input type="number" value={props.seed} placeholder="Seed" onChange={changeSeed} />
+            <label>
+                <input type="checkbox" checked={props.preserveSeed} onChange={changePreserve} />
+                Preserve seed
+            </label>
         </div>
     );
 }
