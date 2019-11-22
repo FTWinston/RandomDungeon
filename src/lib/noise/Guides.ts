@@ -10,7 +10,7 @@ interface GenerationGuide2D {
     ) => number;
 }
 
-class Guides {
+export class Guides {
     static guides2d: GenerationGuide2D[] = [
         {
             name: 'Raised center',

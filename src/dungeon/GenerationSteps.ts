@@ -1,4 +1,4 @@
-export const enum GenerationSteps {
+export enum GenerationSteps {
     CreateNodes,
     AssociateTiles,
     LinkNodes,

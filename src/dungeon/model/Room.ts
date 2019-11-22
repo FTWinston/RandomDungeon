@@ -3,7 +3,7 @@ import { Dungeon } from './Dungeon';
 import { Pathway } from './Pathway';
 import { randomColor } from '../../lib/randomColor';
 
-export const enum RoomType {
+export enum RoomType {
     Natural = 0,
     Artificial = 1,
 

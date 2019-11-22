@@ -7,9 +7,9 @@ interface FixedProps {
 }
 
 export class FixedCanvas extends React.Component<FixedProps, {}> {
-    public ctx: CanvasRenderingContext2D;
-    private root: HTMLDivElement;
-    private canvas: HTMLCanvasElement;
+    public ctx?: CanvasRenderingContext2D;
+    private root?: HTMLDivElement;
+    private canvas?: HTMLCanvasElement;
 
     constructor(props: FixedProps) {
         super(props);
@@ -41,12 +41,14 @@ export class FixedCanvas extends React.Component<FixedProps, {}> {
     }
 
     private updateCtx() {
-        let ctx = this.canvas.getContext('2d');
+        if (this.canvas === undefined) {
+            return;
+        }
+        
+        const ctx = this.canvas.getContext('2d');
 
         if (ctx !== null) {
             this.ctx = ctx;
-        } else {
-            throw 'No ctx';
         }
     }
 }
@@ -62,9 +64,9 @@ interface ResponsiveState {
 }
 
 export class ResponsiveCanvas extends React.Component<ResponsiveProps, ResponsiveState> {
-    public ctx: CanvasRenderingContext2D;
-    private root: HTMLDivElement;
-    private canvas: HTMLCanvasElement;
+    public ctx?: CanvasRenderingContext2D;
+    private root?: HTMLDivElement;
+    private canvas?: HTMLCanvasElement;
     private resizeListener?: () => void;
 
     constructor(props: ResponsiveProps) {
@@ -108,6 +110,10 @@ export class ResponsiveCanvas extends React.Component<ResponsiveProps, Responsiv
     }
 
     updateSize() {
+        if (this.root === undefined) {
+            return;
+        }
+        
         let scrollSize = this.getScrollbarSize();
         let width = this.root.offsetWidth - scrollSize.width;
         let height = this.root.offsetHeight - scrollSize.height;
@@ -123,12 +129,14 @@ export class ResponsiveCanvas extends React.Component<ResponsiveProps, Responsiv
     }
 
     private updateCtx() {
+        if (this.canvas === undefined) {
+            return;
+        }
+        
         let ctx = this.canvas.getContext('2d');
 
         if (ctx !== null) {
             this.ctx = ctx;
-        } else {
-            throw 'No ctx';
         }
     }
 

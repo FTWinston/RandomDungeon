@@ -13,8 +13,8 @@ export class Dungeon extends Graph<Room, Pathway> {
     relativeNeighbourhoodLines: Pathway[] = [];
     minimumSpanningLines: Pathway[] = [];
 
-    width: number;
-    height: number;
+    width: number = 0;
+    height: number = 0;
 
     grid: Tile[][] = [];
     walls: Curve[] = [];

@@ -2,7 +2,7 @@ import * as React from 'react';
 import './Menu.css';
 import { GenerateMenu } from './GenerateMenu';
 
-export const enum NumericProperty {
+export enum NumericProperty {
     CellsWide,
     CellsHigh,
     CellSize,
@@ -30,7 +30,7 @@ interface Props {
     finish: () => void;
 }
 
-const enum SubMenu {
+enum SubMenu {
     Generate,
     Customize,
     Use,
