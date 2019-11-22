@@ -1,5 +1,4 @@
 import { Dungeon } from '../model/Dungeon';
-import { SRandom } from '../../lib/SRandom';
 import { DelaySize } from '../generateDungeon';
 import { Tile } from '../model/Tile';
 import { Curve } from '../../lib/model/Curve';
@@ -12,24 +11,22 @@ export async function generateWallCurves(
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    const random = new SRandom(seed);
     dungeon.walls = [];
 
-    for (let x = 0; x < dungeon.width; x++) {
-        for (let y = 0; y < dungeon.height; y++) {
-            let tile = dungeon.grid[x][y];
+    for (const col of dungeon.grid) {
+        for (const tile of col) {
             if (tile.isWall && !tile.isFloor) {
-                await generateWallCurve(dungeon, tile, random, subStepComplete);
+                await generateWallCurve(dungeon, tile, subStepComplete);
 
                 if (subStepComplete) {
-                    await subStepComplete(DelaySize.Small);
+                    await subStepComplete(DelaySize.Medium);
                 }
             }
         }
     }
 }
 
-async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRandom, subStepComplete?: (interval: DelaySize) => Promise<void>) {
+async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, subStepComplete?: (interval: DelaySize) => Promise<void>) {
     const mainCurve = await generateSingleWallCurve(dungeon, firstTile, subStepComplete);
 
     while (true) {
@@ -42,14 +39,10 @@ async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRan
             return mainCurve;
         }
 
-        if (subStepComplete) {
-            await subStepComplete(DelaySize.Large);
-        }
-
         // See if the different path is longer.
         const branchIndex = mainCurve.keyPoints.indexOf(newStartPoint);
         
-        const newCurve = await generateWallCurve(dungeon, newStartPoint, random, subStepComplete);
+        const newCurve = await generateWallCurve(dungeon, newStartPoint, subStepComplete);
 
         if (newCurve.keyPoints.length <= mainCurve.keyPoints.length - branchIndex || newStartPoint === firstTile) {
             continue;
@@ -67,6 +60,7 @@ async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, random: SRan
         checkForCurveLoops(dungeon, newCurve);
 
         newCurve.updateRenderPoints();
+        mainCurve.updateRenderPoints();
     }
 }
 
