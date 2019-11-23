@@ -54,10 +54,8 @@ export function renderDungeon(
 function drawTileGrid(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number, regionAlpha: number) {
     ctx.lineWidth = 1;
 
-    for (const col of dungeon.grid) {
-        for (const cell of col) {
-            drawTile(cell, ctx, scale, regionAlpha);
-        }
+    for (const tile of dungeon.tiles) {
+        drawTile(tile, ctx, scale, regionAlpha);
     }
 }
 

@@ -20,7 +20,7 @@ function linkNodesToGrid(dungeon: Dungeon) {
         let x = Math.floor(node.x);
         let y = Math.floor(node.y);
 
-        let tile = dungeon.grid[x][y];
+        let tile = dungeon.tilesByCoordinates[x][y];
         tile.room = node;
         tile.isFloor = true;
     }
@@ -113,7 +113,7 @@ async function growRooms(
         maxY = Math.min(dungeon.height - 3, maxY);
         for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
-                let tile = dungeon.grid[x][y];
+                let tile = dungeon.tilesByCoordinates[x][y];
                 if (filter === undefined || filter(x, y)) {
                     tile.isFloor = true;
                     tile.room = node;

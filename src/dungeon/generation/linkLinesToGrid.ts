@@ -16,8 +16,8 @@ export async function linkLinesToGrid(
         let y0 = Math.floor(link.from.y);
         let y1 = Math.floor(link.to.y);
         
-        dungeon.grid[x0][y0].isFloor = true;
-        dungeon.grid[x1][y1].isFloor = true;
+        dungeon.tilesByCoordinates[x0][y0].isFloor = true;
+        dungeon.tilesByCoordinates[x1][y1].isFloor = true;
 
         let steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
         if (steep) { // swap x & y, ensure not steep
@@ -48,16 +48,16 @@ export async function linkLinesToGrid(
             let almostInteger = Math.abs(y - iY) < 0.10;
             
             if (steep) {
-                dungeon.grid[iY + closestSideStep][x].isFloor = true;
-                dungeon.grid[iY][x].isFloor = true;
+                dungeon.tilesByCoordinates[iY + closestSideStep][x].isFloor = true;
+                dungeon.tilesByCoordinates[iY][x].isFloor = true;
                 if (!almostInteger) {
-                    dungeon.grid[iY - closestSideStep][x].isFloor = true;
+                    dungeon.tilesByCoordinates[iY - closestSideStep][x].isFloor = true;
                 }
             } else {
-                dungeon.grid[x][iY + closestSideStep].isFloor = true;
-                dungeon.grid[x][iY].isFloor = true;
+                dungeon.tilesByCoordinates[x][iY + closestSideStep].isFloor = true;
+                dungeon.tilesByCoordinates[x][iY].isFloor = true;
                 if (!almostInteger) {
-                    dungeon.grid[x][iY - closestSideStep].isFloor = true;
+                    dungeon.tilesByCoordinates[x][iY - closestSideStep].isFloor = true;
                 }
             }
             

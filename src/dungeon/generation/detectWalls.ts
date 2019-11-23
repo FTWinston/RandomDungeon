@@ -10,33 +10,32 @@ export async function detectWalls(
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    for (const col of dungeon.grid) {
-        for (const tile of col) {
-            if (tile.isFloor) {
-                continue;
-            }
+    let iCol = 0;
+    for (const tile of dungeon.tiles) {
+        if (tile.isFloor) {
+            continue;
+        }
 
-            let toTest = getAdjacent(dungeon, tile, true, false);
-            for (let test of toTest) {
-                if (test.isFloor) {
-                    tile.isWall = true;
-                    tile.room = test.room;
-                    break;
-                }
-            }
-
-            // artificial rooms should have "corner" wall nodes filled in
-            toTest = getAdjacent(dungeon, tile, false, true);
-            for (let test of toTest) {
-                if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {
-                    tile.isWall = true;
-                    tile.room = test.room;
-                    break;
-                }
+        let toTest = getAdjacent(dungeon, tile, true, false);
+        for (let test of toTest) {
+            if (test.isFloor) {
+                tile.isWall = true;
+                tile.room = test.room;
+                break;
             }
         }
 
-        if (subStepComplete) {
+        // artificial rooms should have "corner" wall nodes filled in
+        for (let test of tile.adjacentTiles) {
+            if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {
+                tile.isWall = true;
+                tile.room = test.room;
+                break;
+            }
+        }
+
+        if (subStepComplete && ++iCol >= dungeon.height) {
+            iCol = 0;
             await subStepComplete(DelaySize.Tiny);
         }
     }
@@ -47,34 +46,34 @@ export function getAdjacent(dungeon: Dungeon, from: Tile, orthogonal: boolean = 
 
     if (orthogonal) {
         if (from.x > 0) {
-            results.push(dungeon.grid[from.x - 1][from.y]);
+            results.push(dungeon.tilesByCoordinates[from.x - 1][from.y]);
         }
         if (from.x < dungeon.width - 1) {
-            results.push(dungeon.grid[from.x + 1][from.y]);
+            results.push(dungeon.tilesByCoordinates[from.x + 1][from.y]);
         }
         if (from.y > 0) {
-            results.push(dungeon.grid[from.x][from.y - 1]);
+            results.push(dungeon.tilesByCoordinates[from.x][from.y - 1]);
         }
         if (from.y < dungeon.height - 1) {
-            results.push(dungeon.grid[from.x][from.y + 1]);
+            results.push(dungeon.tilesByCoordinates[from.x][from.y + 1]);
         }
     }
     
     if (diagonal) {
         if (from.x > 0) {
             if (from.y > 0) {
-                results.push(dungeon.grid[from.x - 1][from.y - 1]);
+                results.push(dungeon.tilesByCoordinates[from.x - 1][from.y - 1]);
             }
             if (from.y < dungeon.height - 1) {
-                results.push(dungeon.grid[from.x - 1][from.y + 1]);
+                results.push(dungeon.tilesByCoordinates[from.x - 1][from.y + 1]);
             }
         }
         if (from.x < dungeon.width - 1) {
             if (from.y > 0) {
-                results.push(dungeon.grid[from.x + 1][from.y - 1]);
+                results.push(dungeon.tilesByCoordinates[from.x + 1][from.y - 1]);
             }
             if (from.y < dungeon.height - 1) {
-                results.push(dungeon.grid[from.x + 1][from.y + 1]);
+                results.push(dungeon.tilesByCoordinates[from.x + 1][from.y + 1]);
             }
         }
     }

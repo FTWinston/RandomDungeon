@@ -71,6 +71,12 @@ export function determineRenderSettings(
             highlightWallCurves = !stageComplete;
             break;
 
+        case GenerationSteps.FillBackdrop:
+            drawGrid = true;
+            drawWalls = true;
+            fillOutside = true;
+            break;
+
         case GenerationSteps.Render:
             drawGrid = true;
             drawWalls = true;

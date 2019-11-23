@@ -9,12 +9,12 @@ export async function associateTilesWithNodes(
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    for (const col of dungeon.grid) {
-        for (const tile of col) {
-            tile.room = getClosest(tile, dungeon.nodes);
-        }
+    let iCol = 0;
+    for (const tile of dungeon.tiles) {
+        tile.room = getClosest(tile, dungeon.nodes);
 
-        if (subStepComplete) {
+        if (subStepComplete && ++iCol >= dungeon.height) {
+            iCol = 0;
             await subStepComplete(DelaySize.Minimal);
         }
     }

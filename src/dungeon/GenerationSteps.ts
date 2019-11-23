@@ -1,4 +1,5 @@
 export enum GenerationSteps {
+    CreateTiles,
     CreateNodes,
     AssociateTiles,
     LinkNodes,
@@ -8,4 +9,7 @@ export enum GenerationSteps {
     DetectWalls,
     CurveWalls,
     Render,
+
+
+    FIRST_STEP = CreateTiles,
 }

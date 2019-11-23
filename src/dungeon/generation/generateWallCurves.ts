@@ -13,14 +13,12 @@ export async function generateWallCurves(
 ) {
     dungeon.walls = [];
 
-    for (const col of dungeon.grid) {
-        for (const tile of col) {
-            if (tile.isWall && !tile.isFloor) {
-                await generateWallCurve(dungeon, tile, true, subStepComplete);
+    for (const tile of dungeon.tiles) {
+        if (tile.isWall && !tile.isFloor) {
+            await generateWallCurve(dungeon, tile, true, subStepComplete);
 
-                if (subStepComplete) {
-                    await subStepComplete(DelaySize.Medium);
-                }
+            if (subStepComplete) {
+                await subStepComplete(DelaySize.Medium);
             }
         }
     }

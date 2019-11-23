@@ -29,7 +29,7 @@ class App extends React.Component<{}, State> {
             preserveSeed: false,
             settings: {
                 seed: 0,
-                generateFrom: GenerationSteps.CreateNodes,
+                generateFrom: GenerationSteps.FIRST_STEP,
                 animateFrom: GenerationSteps.Render,
                 cellsWide: 100,
                 cellsHigh: 70,
@@ -95,11 +95,11 @@ class App extends React.Component<{}, State> {
 
         let regenerateFrom;
         if (prevState.settings.cellsWide !== this.state.settings.cellsWide) {
-            regenerateFrom = GenerationSteps.CreateNodes;
+            regenerateFrom = GenerationSteps.FIRST_STEP;
         }
 
         if (prevState.settings.cellsHigh !== this.state.settings.cellsHigh) {
-            regenerateFrom = GenerationSteps.CreateNodes;
+            regenerateFrom = GenerationSteps.FIRST_STEP;
         }
 
         if (prevState.cellSize !== this.state.cellSize) {
@@ -107,7 +107,7 @@ class App extends React.Component<{}, State> {
         }
 
         if (prevState.settings.nodeCount !== this.state.settings.nodeCount) {
-            regenerateFrom = GenerationSteps.CreateNodes;
+            regenerateFrom = GenerationSteps.FIRST_STEP;
         }
 
         if (prevState.settings.connectivity !== this.state.settings.connectivity) {
@@ -183,7 +183,7 @@ class App extends React.Component<{}, State> {
 
     private async createDungeon(animate: boolean) {
         const animateFrom = animate
-            ? GenerationSteps.CreateNodes
+            ? GenerationSteps.FIRST_STEP
             : GenerationSteps.Render;
 
         const seed = this.state.preserveSeed
@@ -193,7 +193,7 @@ class App extends React.Component<{}, State> {
         const settings: IGenerationSettings = {
             ...this.state.settings,
             animateFrom,
-            generateFrom: GenerationSteps.CreateNodes,
+            generateFrom: GenerationSteps.FIRST_STEP,
             seed,
         };
 

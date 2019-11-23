@@ -7,7 +7,7 @@ import { Cell } from '../../lib/graph/voronoi';
 import { Coord2D } from '../../lib/model/Coord';
 
 export class Dungeon extends Graph<Room, Pathway> {
-    voronoiCells: Cell<Coord2D>[] = []
+    backdropCells: Cell<Coord2D>[] = []
     delauneyLines: Pathway[] = [];
     gabrielLines: Pathway[] = [];
     relativeNeighbourhoodLines: Pathway[] = [];
@@ -16,6 +16,7 @@ export class Dungeon extends Graph<Room, Pathway> {
     width: number = 0;
     height: number = 0;
 
-    grid: Tile[][] = [];
+    tiles: Tile[] = [];
+    tilesByCoordinates: Tile[][] = [];
     walls: Curve[] = [];
 }

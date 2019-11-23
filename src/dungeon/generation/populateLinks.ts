@@ -10,8 +10,6 @@ import {
 import { Pathway } from '../model/Pathway';
 import { DelaySize } from '../generateDungeon';
 import { IGenerationSettings } from '../IGenerationSettings';
-import { computeVoronoiCells, Cell } from '../../lib/graph/voronoi';
-import { Coord2D } from '../../lib/model/Coord';
 
 export async function populateLinks(
     dungeon: Dungeon,
@@ -35,17 +33,6 @@ export async function populateLinks(
     
     dungeon.delauneyLines = getUniqueLines(delauneyTriangles, (from, to) => new Pathway(from, to));
 
-    const nodesWithCorners = [
-        ...dungeon.nodes,
-        new Coord2D(0, 0),
-        new Coord2D(dungeon.width, 0),
-        new Coord2D(0, dungeon.height),
-        new Coord2D(dungeon.width, dungeon.height),
-    ];
-
-    const delauneyTriangles2 = computeDelauneyTriangulation(nodesWithCorners, enclosingTriangle);
-    dungeon.voronoiCells = computeVoronoiCells(nodesWithCorners, delauneyTriangles2) as Cell<Coord2D>[];
-    
     if (subStepComplete) {
         await subStepComplete(DelaySize.Medium);
     }
