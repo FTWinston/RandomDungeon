@@ -8,6 +8,7 @@ export enum GenerationSteps {
     CreateRooms,
     DetectWalls,
     CurveWalls,
+    FillBackdrop,
     Render,
 
 

@@ -21,8 +21,12 @@ export function renderDungeon(
         drawGraph(ctx, dungeon, scale);
     }
     
-    if (settings.fillOutside) {
+    if (settings.drawOutside) {
         fillOutside(ctx, dungeon, scale);
+    }
+
+    if (settings.drawOutsidePoints) {
+        drawOutsidePoints(ctx, dungeon, scale);
     }
 
     if (settings.drawWalls) {
@@ -79,17 +83,10 @@ function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, scale: number, regi
         ctx.fillStyle = '#333';
         ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
     } else if (tile.isFloor) {
-        /*
-        if (tile.room !== null) {
-            ctx.fillStyle = tile.room.color;
-            ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
-        }
-        */
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
         ctx.strokeStyle = 'rgba(200,200,200,0.5)';
         ctx.strokeRect(tile.x * scale, tile.y * scale, scale, scale);
-    } else {
-        ctx.fillStyle = '#666';
-        ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
     }
 
     if (regionAlpha > 0 && tile.room !== null) {
@@ -171,16 +168,23 @@ function drawCurve(
     }
 }
 
-function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
-    ctx.save();
+function clipOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
     ctx.beginPath();
     ctx.rect(0, 0, dungeon.width * scale, dungeon.height * scale);
     for (let curve of dungeon.walls) {
         drawCurve(curve, ctx, scale, scale, false);
     }
     ctx.clip('evenodd');
+}
+
+function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
+    ctx.save();
+    clipOutside(ctx, dungeon, scale);
+
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, dungeon.width * scale, dungeon.height * scale);
+
+    /*
     ctx.strokeStyle = '#000';
     ctx.lineWidth = scale * 0.1;
     let vmax = Math.max(dungeon.width, dungeon.height) * scale;
@@ -193,5 +197,51 @@ function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: num
         ctx.lineTo(i - vmax, 0);
     }
     ctx.stroke();
+    */
+    ctx.globalAlpha = 0.75;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = scale * 0.15;
+
+    const halfScale = scale * 0.5;
+    for (const point of dungeon.backdropPoints) {
+        ctx.save();
+
+        ctx.translate(point.x * scale, point.y * scale);
+        ctx.scale(1, Math.random() * 0.3 + 0.85);
+        ctx.rotate(Math.random() * Math.PI * 2);
+
+        const skewTop = Math.random() * scale * 0.15;
+        const skewBottom = Math.random() * scale * 0.15;
+
+        ctx.moveTo(-halfScale, -halfScale - skewTop);
+        ctx.lineTo(-halfScale, halfScale + skewTop);
+
+        ctx.moveTo(0, -halfScale);
+        ctx.lineTo(0, halfScale);
+
+        ctx.moveTo(halfScale, -halfScale + skewBottom);
+        ctx.lineTo(halfScale, halfScale - skewBottom);
+
+
+        ctx.restore();
+    }
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function drawOutsidePoints(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
+    ctx.save();
+    clipOutside(ctx, dungeon, scale);
+
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle = '#0ff';
+
+    for (const point of dungeon.backdropPoints) {
+        ctx.beginPath();
+        ctx.arc(point.x * scale, point.y * scale, scale * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     ctx.restore();
 }

@@ -8,7 +8,8 @@ export interface IRenderSettings {
     drawGrid: boolean;
     drawWalls: boolean;
     highlightWallCurves: boolean;
-    fillOutside: boolean;
+    drawOutsidePoints: boolean;
+    drawOutside: boolean;
 }
 
 export function determineRenderSettings(   
@@ -23,6 +24,7 @@ export function determineRenderSettings(
     let drawWalls = false;
     let highlightWallCurves = false;
     let fillOutside = false;
+    let drawOutsidePoints = false;
 
     switch (generationStage) {
         case GenerationSteps.CreateNodes:
@@ -74,7 +76,7 @@ export function determineRenderSettings(
         case GenerationSteps.FillBackdrop:
             drawGrid = true;
             drawWalls = true;
-            fillOutside = true;
+            drawOutsidePoints = true;
             break;
 
         case GenerationSteps.Render:
@@ -92,6 +94,7 @@ export function determineRenderSettings(
         drawGrid,
         drawWalls,
         highlightWallCurves,
-        fillOutside,
+        drawOutsidePoints,
+        drawOutside: fillOutside,
     }
 }

@@ -56,6 +56,7 @@ export async function regenerateDungeon(
         [GenerationSteps.CreateRooms, createRooms, DelaySize.Large],
         [GenerationSteps.DetectWalls, detectWalls, DelaySize.Large],
         [GenerationSteps.CurveWalls, generateWallCurves, DelaySize.Large],
+        [GenerationSteps.FillBackdrop, fillBackdrop, DelaySize.Large],
     ];
 
     for (const [step, operation, endDelay] of steps) {

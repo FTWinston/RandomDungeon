@@ -22,7 +22,7 @@
 
 .dungeonDisplay > canvas {
 	margin: auto;
-	background-color: white;
+	background-color: #aaa;
 	border: solid 0.5em #666;
 	border-radius: 0.5em;
 }
