@@ -16,7 +16,7 @@ export async function generateWallCurves(
     for (const col of dungeon.grid) {
         for (const tile of col) {
             if (tile.isWall && !tile.isFloor) {
-                await generateWallCurve(dungeon, tile, subStepComplete);
+                await generateWallCurve(dungeon, tile, true, subStepComplete);
 
                 if (subStepComplete) {
                     await subStepComplete(DelaySize.Medium);
@@ -26,14 +26,16 @@ export async function generateWallCurves(
     }
 }
 
-async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, subStepComplete?: (interval: DelaySize) => Promise<void>) {
+async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, isRootLevel: boolean, subStepComplete?: (interval: DelaySize) => Promise<void>) {
     const mainCurve = await generateSingleWallCurve(dungeon, firstTile, subStepComplete);
 
     while (true) {
         // See if we could have taken a different path at any point.
         const newStartPoint = backtrackToNewStartPoint(dungeon, mainCurve);
         if (newStartPoint === undefined) {
-            checkForCurveLoops(dungeon, mainCurve);
+            if (isRootLevel) {
+                checkForCurveLoops(dungeon, mainCurve);
+            }
 
             mainCurve.updateRenderPoints();
             return mainCurve;
@@ -42,7 +44,7 @@ async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, subStepCompl
         // See if the different path is longer.
         const branchIndex = mainCurve.keyPoints.indexOf(newStartPoint);
         
-        const newCurve = await generateWallCurve(dungeon, newStartPoint, subStepComplete);
+        const newCurve = await generateWallCurve(dungeon, newStartPoint, false, subStepComplete);
 
         if (newCurve.keyPoints.length <= mainCurve.keyPoints.length - branchIndex || newStartPoint === firstTile) {
             continue;
@@ -57,7 +59,9 @@ async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, subStepCompl
         newCurve.keyPoints = oldBranch;
         mainCurve.keyPoints = mainCurve.keyPoints.concat(newBranch);
         
-        checkForCurveLoops(dungeon, newCurve);
+        if (isRootLevel) {
+            checkForCurveLoops(dungeon, newCurve);
+        }
 
         newCurve.updateRenderPoints();
         mainCurve.updateRenderPoints();
