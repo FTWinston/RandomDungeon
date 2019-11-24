@@ -12,7 +12,7 @@ export async function fillBackdrop(
 ) {
     const wallTiles = dungeon.tiles.filter(t => t.isWall);
 
-    const backdropTiles = new Set<Tile>(wallTiles);
+    const backdropTiles = new Set<Tile>();
     addAdjacentNonFloorTiles(wallTiles, backdropTiles);
     addAdjacentNonFloorTiles([...backdropTiles], backdropTiles);
     addAdjacentNonFloorTiles([...backdropTiles], backdropTiles);

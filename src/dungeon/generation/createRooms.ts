@@ -107,10 +107,10 @@ async function growRooms(
                 return (x * x) / (a * a) + (y * y) / (b * b) <= 1;
             };
         }
-        minX = Math.max(2, minX);
-        maxX = Math.min(dungeon.width - 3, maxX);
-        minY = Math.max(2, minY);
-        maxY = Math.min(dungeon.height - 3, maxY);
+        minX = Math.max(3, minX);
+        maxX = Math.min(dungeon.width - 4, maxX);
+        minY = Math.max(3, minY);
+        maxY = Math.min(dungeon.height - 4, maxY);
         for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
                 let tile = dungeon.tilesByCoordinates[x][y];

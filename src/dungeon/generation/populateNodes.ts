@@ -17,8 +17,8 @@ export async function populateNodes(
     const random = new SRandom(seed);
 
     let makeNode = () => {
-        let x = random.nextInRange(2, dungeon.width - 2);
-        let y = random.nextInRange(2, dungeon.height - 2);
+        let x = random.nextInRange(3, dungeon.width - 4);
+        let y = random.nextInRange(3, dungeon.height - 4);
         return new Room(dungeon, x, y, random.nextIntInRange(0, RoomType.NUM_VALUES));
     };
 

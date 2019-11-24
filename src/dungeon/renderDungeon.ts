@@ -85,7 +85,7 @@ function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, scale: number, regi
     } else if (tile.isFloor) {
         ctx.fillStyle = '#fff';
         ctx.fillRect(tile.x * scale, tile.y * scale, scale, scale);
-        ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+        ctx.strokeStyle = 'rgba(192,192,192,0.5)';
         ctx.strokeRect(tile.x * scale, tile.y * scale, scale, scale);
     }
 
@@ -184,6 +184,8 @@ function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: num
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, dungeon.width * scale, dungeon.height * scale);
 
+
+    ctx.restore();
     /*
     ctx.strokeStyle = '#000';
     ctx.lineWidth = scale * 0.1;
@@ -200,14 +202,14 @@ function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: num
     */
     ctx.globalAlpha = 0.75;
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = scale * 0.15;
+    ctx.lineWidth = scale * 0.2;
 
-    const halfScale = scale * 0.5;
+    const halfScale = scale * 0.6;
     for (const point of dungeon.backdropPoints) {
         ctx.save();
 
-        ctx.translate(point.x * scale, point.y * scale);
-        ctx.scale(1, Math.random() * 0.3 + 0.85);
+        ctx.translate((point.x + 0.5) * scale, (point.y + 0.5) * scale);
+        ctx.scale(1, Math.random() * 0.2 + 1);
         ctx.rotate(Math.random() * Math.PI * 2);
 
         const skewTop = Math.random() * scale * 0.15;
@@ -226,8 +228,7 @@ function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: num
         ctx.restore();
     }
     ctx.stroke();
-
-    ctx.restore();
+    ctx.globalAlpha = 1;
 }
 
 function drawOutsidePoints(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
