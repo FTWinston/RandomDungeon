@@ -3,10 +3,10 @@ import { Room } from './Room';
 import { Tile } from './Tile';
 import { Graph } from '../../lib/model/Graph';
 import { Curve } from '../../lib/model/Curve';
-import { Coord2D } from '../../lib/model/Coord';
+import { Hatching } from './Hatching';
 
 export class Dungeon extends Graph<Room, Pathway> {
-    backdropPoints: Coord2D[] = [];
+    backdropPoints: Hatching[] = [];
     delauneyLines: Pathway[] = [];
     gabrielLines: Pathway[] = [];
     relativeNeighbourhoodLines: Pathway[] = [];

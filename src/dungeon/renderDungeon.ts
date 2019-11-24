@@ -178,57 +178,51 @@ function clipOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: num
 }
 
 function fillOutside(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
+    ctx.fillStyle = '#fff';
+
     ctx.save();
     clipOutside(ctx, dungeon, scale);
 
-    ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, dungeon.width * scale, dungeon.height * scale);
-
-
-    ctx.restore();
-    /*
+    
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = scale * 0.1;
-    let vmax = Math.max(dungeon.width, dungeon.height) * scale;
-    let width = dungeon.width * scale;
-    let iMax = vmax * 2;
-    for (let i = iMax; i >= 0; i -= scale * 0.75) {
-        ctx.moveTo(0, i);
-        ctx.lineTo(i, 0);
-        ctx.moveTo(width, iMax - i);
-        ctx.lineTo(i - vmax, 0);
-    }
-    ctx.stroke();
-    */
-    ctx.globalAlpha = 0.75;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = scale * 0.2;
+    ctx.lineWidth = scale * 0.175;
 
-    const halfScale = scale * 0.6;
+    const xScale = scale * 0.6;
     for (const point of dungeon.backdropPoints) {
+        const yScale = scale * point.lengthScale;
+        
         ctx.save();
 
-        ctx.translate((point.x + 0.5) * scale, (point.y + 0.5) * scale);
-        ctx.scale(1, Math.random() * 0.2 + 1);
-        ctx.rotate(Math.random() * Math.PI * 2);
+        ctx.translate(point.x * scale, point.y * scale);
+        ctx.rotate(point.rotation);
 
-        const skewTop = Math.random() * scale * 0.15;
-        const skewBottom = Math.random() * scale * 0.15;
+        // first clear the background of this segment
+        ctx.beginPath();
+        ctx.moveTo(-xScale, -yScale - point.topSkew * scale);
+        ctx.lineTo(xScale, -yScale + point.topSkew * scale);
+        ctx.lineTo(xScale, yScale - point.bottomSkew * scale);
+        ctx.lineTo(-xScale, yScale + point.bottomSkew * scale);
+        ctx.fill();
 
-        ctx.moveTo(-halfScale, -halfScale - skewTop);
-        ctx.lineTo(-halfScale, halfScale + skewTop);
+        // then draw the lines
+        ctx.beginPath();
 
-        ctx.moveTo(0, -halfScale);
-        ctx.lineTo(0, halfScale);
+        ctx.moveTo(-xScale, -yScale - point.topSkew * scale);
+        ctx.lineTo(-xScale, yScale + point.bottomSkew * scale);
 
-        ctx.moveTo(halfScale, -halfScale + skewBottom);
-        ctx.lineTo(halfScale, halfScale - skewBottom);
+        ctx.moveTo(0, -yScale);
+        ctx.lineTo(0, yScale);
 
+        ctx.moveTo(xScale, -yScale + point.topSkew * scale);
+        ctx.lineTo(xScale, yScale - point.bottomSkew * scale);
+
+        ctx.stroke();
 
         ctx.restore();
     }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+
+    ctx.restore();
 }
 
 function drawOutsidePoints(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scale: number) {
@@ -236,7 +230,7 @@ function drawOutsidePoints(ctx: CanvasRenderingContext2D, dungeon: Dungeon, scal
     clipOutside(ctx, dungeon, scale);
 
     ctx.globalAlpha = 0.75;
-    ctx.fillStyle = '#0ff';
+    ctx.fillStyle = '#009';
 
     for (const point of dungeon.backdropPoints) {
         ctx.beginPath();

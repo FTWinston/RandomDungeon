@@ -5,7 +5,7 @@ export class Tile extends Coord2D {
     public room: Room | null = null;
     public readonly adjacentTiles: Tile[] = [];
 
-    constructor(public readonly x: number, public readonly y: number, public isFloor: boolean = false, public isWall: boolean = false) {
+    constructor(x: number, y: number, public isFloor: boolean = false, public isWall: boolean = false) {
         super(x, y);
     }
 }
