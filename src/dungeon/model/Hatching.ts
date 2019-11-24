@@ -17,9 +17,9 @@ export class Hatching extends Coord2D {
             return;
         }
 
-        const random = new SRandom(seed + x ^ y);
+        const random = new SRandom(seed + x * x * 4987142 + x * 5947611 + y * y * 4392871 + y * 389711);
 
-        super(x + 0.15 + random.next() * 0.65, y + 0.15 + random.next() * 0.65);
+        super(x + random.nextInRange(0.1, 0.9), y + random.nextInRange(0.1, 0.9));
 
         this.rotation = random.nextInRange(0, Math.PI * 2);
         this.lengthScale = random.nextInRange(0.9, 1.35);
