@@ -47,10 +47,18 @@ class App extends React.Component<{}, State> {
     render() {
         const setNumber = (prop: NumericProperty, val: number) => this.setParameter(prop, val)
         const generate = (animate: boolean) => this.createDungeon(animate);
-        const skip = () => this.state.settings.animateFrom++;
-        const finish = () => this.state.settings.animateFrom = GenerationSteps.Render;
-
-        const setSeed = (val: number) => { this.state.settings.seed = val; this.setState({}); };
+        const skip = () => this.setState(state => {
+            state.settings.animateFrom++;
+            return state;
+        })
+        const finish = () => this.setState(state => {
+            state.settings.animateFrom = GenerationSteps.Render;
+            return state;
+        })
+        const setSeed = (val: number) => this.setState(state => {
+            state.settings.seed = val;
+            return state;
+        });
         const setPreserveSeed = (val: boolean) => this.setState({ preserveSeed: val });
 
         return (
