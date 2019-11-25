@@ -22,6 +22,10 @@ export async function generateWallCurves(
             }
         }
     }
+
+    for (const curve of dungeon.walls) {
+        curve.updateRenderPoints();
+    }
 }
 
 async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, isRootLevel: boolean, subStepComplete?: (interval: DelaySize) => Promise<void>) {
@@ -35,7 +39,9 @@ async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, isRootLevel:
                 checkForCurveLoops(dungeon, mainCurve);
             }
 
-            mainCurve.updateRenderPoints();
+            if (subStepComplete !== undefined) {
+                mainCurve.updateRenderPoints();
+            }
             return mainCurve;
         }
 
@@ -61,8 +67,11 @@ async function generateWallCurve(dungeon: Dungeon, firstTile: Tile, isRootLevel:
             checkForCurveLoops(dungeon, newCurve);
         }
 
-        newCurve.updateRenderPoints();
-        mainCurve.updateRenderPoints();
+        if (subStepComplete !== undefined) {
+            newCurve.updateRenderPoints();
+            mainCurve.updateRenderPoints();
+            await subStepComplete(DelaySize.Medium);
+        }
     }
 }
 
@@ -80,7 +89,7 @@ function backtrackToNewStartPoint(dungeon: Dungeon, curve: Curve) {
     return undefined;
 }
 
-function checkForCurveLoops(dungeon: Dungeon, mainCurve: Curve) {
+function checkForCurveLoops(dungeon: Dungeon, mainCurve: Curve, subStepComplete?: (interval: DelaySize) => Promise<void>) {
     // detect simple loops, as well as "p" and "b" loops that need split into two parts
     const firstPoint = mainCurve.keyPoints[0];
     const lastPoint = mainCurve.keyPoints[mainCurve.keyPoints.length - 1];
@@ -94,7 +103,10 @@ function checkForCurveLoops(dungeon: Dungeon, mainCurve: Curve) {
             const splitCurve = new Curve();
             splitCurve.keyPoints = mainCurve.keyPoints.splice(splitPos + 1);
             splitCurve.keyPoints.unshift(mainCurve.keyPoints[splitPos]);
-            splitCurve.updateRenderPoints();
+
+            if (subStepComplete) {
+                splitCurve.updateRenderPoints();
+            }
             dungeon.walls.push(splitCurve);
             
             mainCurve.isLoop = true;
@@ -114,7 +126,9 @@ function checkForCurveLoops(dungeon: Dungeon, mainCurve: Curve) {
             const splitPoint = mainCurve.keyPoints[splitPos];
             splitCurve.keyPoints = mainCurve.keyPoints.splice(0, splitPos - 1);
             splitCurve.keyPoints.push(splitPoint);
-            splitCurve.updateRenderPoints();
+            if (subStepComplete) {
+                splitCurve.updateRenderPoints();
+            }
             dungeon.walls.push(splitCurve);
 
             mainCurve.isLoop = true;
@@ -194,9 +208,8 @@ export async function generateSingleWallCurve(dungeon: Dungeon, firstTile: Tile,
 
     } while (prevTile !== undefined)
 
-    curve.updateRenderPoints();
-
     if (subStepComplete) {
+        curve.updateRenderPoints();
         await subStepComplete(DelaySize.Medium);
     }
 
