@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { FunctionComponent, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { Menu } from './Menu';
+import { Menu } from './menu/Menu';
 import { FixedCanvas } from './Canvas';
 import { Dungeon } from '../dungeon/model/Dungeon';
 import './App.css';

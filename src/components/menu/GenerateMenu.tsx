@@ -1,6 +1,13 @@
 import * as React from 'react';
-import { NumericProperty } from './Menu';
 import { FunctionComponent } from 'react';
+
+enum NumericProperty {
+    CellsWide,
+    CellsHigh,
+    CellSize,
+    NodeCount,
+    Connectivity,
+}
 
 interface Props {
     disabled: boolean;
