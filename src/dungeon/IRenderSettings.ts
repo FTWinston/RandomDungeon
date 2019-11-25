@@ -10,11 +10,21 @@ export interface IRenderSettings {
     highlightWallCurves: boolean;
     drawOutsidePoints: boolean;
     drawOutside: boolean;
+    backgroundColor: string;
+    floorColor: string;
+    floorGridColor: string;
+    floorGridWidth: number;
+    wallColor: string;
+    hatchingColor: string;
+    cellSize: number,
+    wallWidth: number,
+    hatchingWidth: number,
 }
 
 export function determineRenderSettings(   
     generationStage = GenerationSteps.Render,
     stageComplete: boolean = true,
+    cellSize: number,
 ): IRenderSettings {
     let nodeAlpha = 0;
     let regionAlpha = 0;
@@ -23,7 +33,7 @@ export function determineRenderSettings(
     let drawGrid = false;
     let drawWalls = false;
     let highlightWallCurves = false;
-    let fillOutside = false;
+    let drawOutside = false;
     let drawOutsidePoints = false;
 
     switch (generationStage) {
@@ -82,7 +92,7 @@ export function determineRenderSettings(
         case GenerationSteps.Render:
             drawGrid = true;
             drawWalls = true;
-            fillOutside = true;
+            drawOutside = true;
             break;
     }
 
@@ -95,6 +105,15 @@ export function determineRenderSettings(
         drawWalls,
         highlightWallCurves,
         drawOutsidePoints,
-        drawOutside: fillOutside,
+        drawOutside,
+        floorColor: '#fff',
+        floorGridColor: 'rgba(192,192,192,0.5)',
+        backgroundColor: '#fff',
+        hatchingColor: '#000',
+        wallColor: '#000',
+        cellSize,
+        wallWidth: cellSize,
+        floorGridWidth: 1,
+        hatchingWidth: cellSize * 0.175,
     }
 }

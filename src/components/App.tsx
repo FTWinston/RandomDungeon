@@ -37,7 +37,7 @@ class App extends React.Component<{}, State> {
                 connectivity: 50,
                 redraw: (dungeon: Dungeon, stage: GenerationSteps, stageComplete: boolean) => { 
                     if (this.canvas !== undefined) {
-                        renderDungeon(dungeon, this.canvas.ctx!, this.state.cellSize, determineRenderSettings(stage, stageComplete))
+                        renderDungeon(dungeon, this.canvas.ctx!, determineRenderSettings(stage, stageComplete, this.state.cellSize))
                     }   
                 },
             }
