@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FunctionComponent, useState } from 'react';
+import { FunctionComponent, useState, useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Menu } from './menu/Menu';
 import { FixedCanvas } from './Canvas';
@@ -72,6 +72,8 @@ export const App: FunctionComponent = () => {
 
     const skip = () => generationSettings.animateFrom++;
     const finish = () => generationSettings.animateFrom = GenerationSteps.Render;
+
+    useEffect(() => { generate() }, []);
 
     return (    
         <Router>
