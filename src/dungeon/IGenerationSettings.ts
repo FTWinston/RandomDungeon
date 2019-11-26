@@ -9,6 +9,7 @@ export interface IGenerationSettings {
     connectivity: number;
 
     generateFrom: GenerationSteps;
+    generateTo: GenerationSteps;
     animateFrom: GenerationSteps;
     redraw: (dungeon: Dungeon, step: GenerationSteps, stepComplete: boolean) => void,
 }

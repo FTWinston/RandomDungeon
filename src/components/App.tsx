@@ -21,6 +21,7 @@ export const App: FunctionComponent = () => {
     const [generationSettings, setGenerationSettings] = useState<IGenerationSettings>({
         seed: 0,
         generateFrom: GenerationSteps.FIRST_STEP,
+        generateTo: GenerationSteps.Render,
         animateFrom: GenerationSteps.Render,
         cellsWide: 100,
         cellsHigh: 70,
@@ -33,39 +34,41 @@ export const App: FunctionComponent = () => {
         },
     });
 
-    const generate = async () => {
+    const generate = async (generateTo: GenerationSteps) => {
         const settings = {
             ...generationSettings,
             seed: Math.random(),
             animateFrom: GenerationSteps.Render,
             generateFrom: GenerationSteps.FIRST_STEP,
+            generateTo,
         };
 
         setGenerationSettings(settings);
         setDungeon(undefined);
 
-        const dungeon = await generateDungeon(generationSettings);
+        const dungeon = await generateDungeon(settings);
 
         setDungeon(dungeon);
-
-        setGenerationSettings({
-            ...settings,
-            animateFrom: GenerationSteps.Render,
-        });
     }
 
-    const regenerate = async (animate: boolean, regenerateFrom: GenerationSteps) => {
+    const regenerate = async (animate: boolean, regenerateFrom: GenerationSteps, generateTo: GenerationSteps) => {
         const settings = {
             ...generationSettings,
             animateFrom: animate
                 ? regenerateFrom
                 : GenerationSteps.Render,
             generateFrom: regenerateFrom,
+            generateTo,
         };
 
         setDungeon(undefined);
 
         await regenerateDungeon(dungeon!, settings);
+
+        setGenerationSettings({
+            ...settings,
+            animateFrom: GenerationSteps.Render,
+        });
 
         setDungeon(dungeon);
     }
@@ -73,7 +76,7 @@ export const App: FunctionComponent = () => {
     const skip = () => generationSettings.animateFrom++;
     const finish = () => generationSettings.animateFrom = GenerationSteps.Render;
 
-    useEffect(() => { generate() }, []); // eslint-disable-line
+    useEffect(() => { generate(GenerationSteps.Render) }, []); // eslint-disable-line
 
     return (    
         <Router>

@@ -7,6 +7,7 @@ import { Download } from './Download';
 import { RegionPlacement } from './RegionPlacement';
 import { RegionSize } from './RegionSize';
 import { RegionTypes } from './RegionTypes';
+import { GenerationSteps } from '../../dungeon/GenerationSteps';
 
 interface Props extends AutoGenerateProps {
     
@@ -45,6 +46,10 @@ export const Menu: FunctionComponent<Props> = props => {
                     prev="/interactive/regions/size"
                 />
             </Route>
+            <Route path="/interactive" exact render={() => {
+                props.generate(GenerationSteps.FIRST_STEP); // clear the current map
+                return <Redirect to="/interactive/regions/place" />
+            }} />
             <Route path="/interactive">
                 <Redirect to="/interactive/regions/place" />
             </Route>

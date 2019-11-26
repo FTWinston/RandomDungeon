@@ -8,19 +8,20 @@ export interface Props {
     isGenerating: boolean;
     generationSettings: Readonly<IGenerationSettings>;
     setGenerationSettings: (settings: IGenerationSettings) => void;
-    generate: () => Promise<void>;
-    regenerate: (animate: boolean, regenerateFrom: GenerationSteps) => Promise<void>;
+    generate: (generateTo: GenerationSteps) => Promise<void>;
+    regenerate: (animate: boolean, generateFrom: GenerationSteps, generateTo: GenerationSteps) => Promise<void>;
     skip: () => void;
     finish: () => void;
 }
 
 export const AutoGenerate: FunctionComponent<Props> = props => {
-    const regenerate = props.regenerate;
-    const animate = useMemo(() => (() => regenerate(true, GenerationSteps.FIRST_STEP)), [regenerate]);
+    const { generate, regenerate } = props;
+    const generateNew = useMemo(() => (() => generate(GenerationSteps.Render)), [generate]);
+    const animate = useMemo(() => (() => regenerate(true, GenerationSteps.FIRST_STEP, GenerationSteps.Render)), [regenerate]);
 
     const generateOrSkip = props.isGenerating
         ? <button>Skip step</button>
-        : <button onClick={props.generate}>Generate new</button>
+        : <button onClick={generateNew}>Generate new</button>
 
     const animateOrFinish = props.isGenerating
         ? <button>Finish</button>
@@ -32,6 +33,7 @@ export const AutoGenerate: FunctionComponent<Props> = props => {
         {generateOrSkip}
         {animateOrFinish}
 
+        <Link to="/interactive/details">Edit manually</Link>
         <Link to="/download">Download</Link>
     </div>
 }

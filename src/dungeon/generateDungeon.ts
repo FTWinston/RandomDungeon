@@ -66,6 +66,10 @@ export async function regenerateDungeon(
             continue;
         }
 
+        if (settings.generateTo < step) {
+            break;
+        }
+
         const subStepReached = settings.animateFrom <= step
             ? async (interval: DelaySize) => {
                 if (settings.animateFrom > step) {
