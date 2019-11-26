@@ -82,6 +82,8 @@ export const App: FunctionComponent = () => {
         <Router>
             <div className="App">
                 <Menu
+                    dungeon={dungeon}
+                    setDungeon={setDungeon}
                     isGenerating={dungeon === undefined}
                     generationSettings={generationSettings}
                     setGenerationSettings={setGenerationSettings}

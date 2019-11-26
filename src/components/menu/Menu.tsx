@@ -9,9 +9,11 @@ import { RegionSize } from './RegionSize';
 import { RegionTypes } from './RegionTypes';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
 import { MapSize } from './MapSize';
+import { Dungeon } from '../../dungeon/model/Dungeon';
 
 interface Props extends AutoGenerateProps {
-    
+    dungeon?: Dungeon;
+    setDungeon: (dungeon: Dungeon) => void;
 }
 
 export const Menu: FunctionComponent<Props> = props => {
@@ -34,6 +36,9 @@ export const Menu: FunctionComponent<Props> = props => {
             <Route path="/interactive/size">
                 <MapSize
                     next="/interactive/regions/place"
+                    cellsWide={props.dungeon.width}
+                    cellsHigh={props.dungeon.height}
+                    setDungeon={props.setDungeon}
                 />
             </Route>
             <Route path="/interactive/regions/place">
