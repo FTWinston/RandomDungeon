@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { FunctionComponent } from 'react';
+import { FunctionComponent, useMemo } from 'react';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
+import { Link } from 'react-router-dom';
 
 export interface Props {
     isGenerating: boolean;
@@ -14,7 +15,25 @@ export interface Props {
 }
 
 export const AutoGenerate: FunctionComponent<Props> = props => {
-    return <div className="menu menu--autoGenerate">TODO</div>
+    const regenerate = props.regenerate;
+    const animate = useMemo(() => (() => regenerate(true, GenerationSteps.FIRST_STEP)), [regenerate]);
+
+    const generateOrSkip = props.isGenerating
+        ? <button>Skip step</button>
+        : <button onClick={props.generate}>Generate new</button>
+
+    const animateOrFinish = props.isGenerating
+        ? <button>Finish</button>
+        : <button onClick={animate}>Animate generation</button>
+
+    return <div className="menu menu--autoGenerate">
+        <Link to="/interactive">Interactive generation</Link>
+
+        {generateOrSkip}
+        {animateOrFinish}
+
+        <Link to="/download">Download</Link>
+    </div>
 }
 
 /*

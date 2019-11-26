@@ -15,7 +15,7 @@ interface Props extends AutoGenerateProps {
 export const Menu: FunctionComponent<Props> = props => {
     return (
         <Switch>
-            <Route path="" exact>
+            <Route path="/" exact>
                 <AutoGenerate
                     isGenerating={props.isGenerating}
                     generationSettings={props.generationSettings}
@@ -26,24 +26,27 @@ export const Menu: FunctionComponent<Props> = props => {
                     finish={props.finish}
                 />
             </Route>
-            <Route path="download">
+            <Route path="/download">
                 <Download />
             </Route>
-            <Route path="interactive/regions/place">
+            <Route path="/interactive/regions/place">
                 <RegionPlacement
-                    next="interactive/regions/size"
+                    next="/interactive/regions/size"
                 />
             </Route>
-            <Route path="interactive/regions/size">
+            <Route path="/interactive/regions/size">
                 <RegionSize
-                    prev="interactive/regions/place"
-                    next="interactive/regions/types"
+                    prev="/interactive/regions/place"
+                    next="/interactive/regions/types"
                 />
             </Route>
-            <Route path="interactive/regions/types">
+            <Route path="/interactive/regions/types">
                 <RegionTypes
-                    prev="interactive/regions/size"
+                    prev="/interactive/regions/size"
                 />
+            </Route>
+            <Route path="/interactive">
+                <Redirect to="/interactive/regions/place" />
             </Route>
             <Route>
                 <Redirect to="/" />

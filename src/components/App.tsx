@@ -73,7 +73,7 @@ export const App: FunctionComponent = () => {
     const skip = () => generationSettings.animateFrom++;
     const finish = () => generationSettings.animateFrom = GenerationSteps.Render;
 
-    useEffect(() => { generate() }, []);
+    useEffect(() => { generate() }, []); // eslint-disable-line
 
     return (    
         <Router>
