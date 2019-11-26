@@ -8,6 +8,7 @@ import { RegionPlacement } from './RegionPlacement';
 import { RegionSize } from './RegionSize';
 import { RegionTypes } from './RegionTypes';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
+import { MapSize } from './MapSize';
 
 interface Props extends AutoGenerateProps {
     
@@ -30,8 +31,14 @@ export const Menu: FunctionComponent<Props> = props => {
             <Route path="/download">
                 <Download />
             </Route>
+            <Route path="/interactive/size">
+                <MapSize
+                    next="/interactive/regions/place"
+                />
+            </Route>
             <Route path="/interactive/regions/place">
                 <RegionPlacement
+                    prev="/interactive/size"
                     next="/interactive/regions/size"
                 />
             </Route>
