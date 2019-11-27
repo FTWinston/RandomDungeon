@@ -9,21 +9,7 @@ export async function createRooms(
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    linkNodesToGrid(dungeon);
-
     await growRooms(dungeon, seed, subStepComplete);
-}
-
-function linkNodesToGrid(dungeon: Dungeon) {
-    // link up the nodes to the tiles that they touch
-    for (let node of dungeon.nodes) {
-        let x = Math.floor(node.x);
-        let y = Math.floor(node.y);
-
-        let tile = dungeon.tilesByCoordinates[x][y];
-        tile.room = node;
-        tile.isFloor = true;
-    }
 }
 
 async function growRooms(
@@ -116,7 +102,7 @@ async function growRooms(
                 let tile = dungeon.tilesByCoordinates[x][y];
                 if (filter === undefined || filter(x, y)) {
                     tile.isFloor = true;
-                    tile.room = node;
+                    tile.region = node;
                 }
             }
         }

@@ -88,9 +88,9 @@ function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, settings: IRenderSe
         ctx.strokeRect(tile.x * settings.cellSize, tile.y * settings.cellSize, settings.cellSize, settings.cellSize);
     }
 
-    if (settings.regionAlpha > 0 && tile.room !== null) {
+    if (settings.regionAlpha > 0 && tile.region !== null) {
         ctx.globalAlpha = settings.regionAlpha;
-        ctx.fillStyle = tile.room.color;
+        ctx.fillStyle = tile.region.color;
         ctx.fillRect(tile.x * settings.cellSize, tile.y * settings.cellSize, settings.cellSize, settings.cellSize);
         ctx.globalAlpha = 1;
     }

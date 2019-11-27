@@ -33,11 +33,11 @@ export const RegionSize: FunctionComponent<Props> = props => {
                 const cellY = e.offsetY / cellSize;
 
                 const cell = dungeon.getTileAt(cellX, cellY);
-                if (cell === undefined || cell.room === null) {
+                if (cell === undefined || cell.region === null) {
                     return;
                 }
 
-                cell.room.regionInfluence *= 1.2;
+                cell.region.regionInfluence *= 1.2;
                 redraw();
             };
     
@@ -48,11 +48,11 @@ export const RegionSize: FunctionComponent<Props> = props => {
                 e.preventDefault();
 
                 const cell = dungeon.getTileAt(cellX, cellY);
-                if (cell === undefined || cell.room === null) {
+                if (cell === undefined || cell.region === null) {
                     return;
                 }
 
-                cell.room.regionInfluence /= 1.2;
+                cell.region.regionInfluence /= 1.2;
                 redraw();
             };
     

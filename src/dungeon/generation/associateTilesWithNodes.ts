@@ -16,7 +16,7 @@ export async function associateTilesWithNodes(
     const distance = (room: Region, point: Coord<Region>) => point.distanceSqTo(room) / room.regionInfluence;
 
     for (const tile of dungeon.tiles) {
-        tile.room = getClosest(tile, dungeon.nodes, distance);
+        tile.region = getClosest(tile, dungeon.nodes, distance);
 
         if (subStepComplete && ++iCol >= dungeon.height) {
             iCol = 0;

@@ -46,11 +46,11 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
 
             // remove associated node
             const cell = dungeon.getTileAt(cellX, cellY);
-            if (cell === undefined || cell.room === null) {
+            if (cell === undefined || cell.region === null) {
                 return;
             }
 
-            const node = cell.room;
+            const node = cell.region;
             dungeon.nodes = dungeon.nodes.filter(n => n !== node);
 
             redraw();
