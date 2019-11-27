@@ -50,7 +50,6 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
                 dungeon.nodes = dungeon.nodes.filter(n => n !== node);
             }
 
-            // TODO: need to regenerate this step
             redraw();
         };
 

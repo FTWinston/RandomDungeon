@@ -50,7 +50,11 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeon={props.dungeon}
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
-                    redraw={() => props.redraw(GenerationSteps.CreateNodes)}
+                    redraw={() => {
+                        // TODO: why don't we see anything here?
+                        props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.AssociateTiles);
+                        props.redraw(GenerationSteps.AssociateTiles);
+                    }}
                 />
             </Route>
             <Route path="/interactive/regions/size">
