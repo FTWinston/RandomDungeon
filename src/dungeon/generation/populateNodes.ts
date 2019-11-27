@@ -2,7 +2,7 @@ import { Dungeon } from '../model/Dungeon';
 import { Room, RoomType } from '../model/Room';
 import { Coord2D } from '../../lib/model/Coord';
 import { Line } from '../../lib/model/Line';
-import { Graph } from '../../lib/model/Graph';
+import { IGraph } from '../../lib/model/Graph';
 import { SRandom } from '../../lib/SRandom';
 import { DelaySize } from '../generateDungeon';
 import { IGenerationSettings } from '../IGenerationSettings';
@@ -33,7 +33,7 @@ export async function populateNodes(
 }
 
 function addSpacedNode<TNode extends Coord2D, TLine extends Line<TNode>>(
-    dungeon: Graph<TNode, TLine>,
+    dungeon: IGraph<TNode, TLine>,
     makeNode: () => TNode,
     totWidth: number,
     totHeight: number

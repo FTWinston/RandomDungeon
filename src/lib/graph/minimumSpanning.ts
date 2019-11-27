@@ -1,9 +1,9 @@
 import { Coord } from '../model/Coord';
-import { Graph } from '../model/Graph';
+import { IGraph } from '../model/Graph';
 import { Line } from '../model/Line';
 
 export function computeMinimumSpanningTree<TNode extends Coord<TNode>, TLine extends Line<TNode>>(
-    graph: Graph<TNode, TLine>,
+    graph: IGraph<TNode, TLine>,
     links: TLine[] = graph.lines
 ) {
     let unvisitedNodes = graph.nodes.slice();
