@@ -1,6 +1,6 @@
 import { Dungeon } from './model/Dungeon';
 import { Pathway } from './model/Pathway';
-import { Room } from './model/Room';
+import { Region } from './model/Region';
 import { Tile } from './model/Tile';
 import { Curve } from '../lib/model/Curve';
 import { IRenderSettings } from './IRenderSettings';
@@ -69,7 +69,7 @@ function drawPath(pathway: Pathway, ctx: CanvasRenderingContext2D, settings: IRe
     ctx.stroke();
 }
 
-function drawNode(room: Room, ctx: CanvasRenderingContext2D, settings: IRenderSettings) {
+function drawNode(room: Region, ctx: CanvasRenderingContext2D, settings: IRenderSettings) {
     ctx.fillStyle = '#c00';
     
     ctx.beginPath();

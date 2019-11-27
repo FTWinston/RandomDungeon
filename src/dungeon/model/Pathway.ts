@@ -1,8 +1,8 @@
 import { Line } from '../../lib/model/Line';
-import { Room } from './Room';
+import { Region } from './Region';
 
-export class Pathway extends Line<Room> {
-    constructor(from: Room, to: Room) {
+export class Pathway extends Line<Region> {
+    constructor(from: Region, to: Region) {
         super(from, to);
 
         from.links.push(this);

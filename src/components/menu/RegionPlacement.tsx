@@ -2,7 +2,7 @@ import * as React from 'react';
 import { FunctionComponent, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Dungeon } from '../../dungeon/model/Dungeon';
-import { Room, RoomType } from '../../dungeon/model/Room';
+import { Region, RegionType } from '../../dungeon/model/Region';
 
 interface Props {
     prev?: string;
@@ -34,7 +34,7 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
             const cellY = e.offsetY / cellSize;
 
             // add new node
-            dungeon.nodes.push(new Room(dungeon, cellX, cellY, RoomType.Artificial));
+            dungeon.nodes.push(new Region(dungeon, cellX, cellY, RegionType.Artificial));
             redraw();
         };
 

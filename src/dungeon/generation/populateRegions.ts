@@ -1,5 +1,5 @@
 import { Dungeon } from '../model/Dungeon';
-import { Room, RoomType } from '../model/Room';
+import { Region, RegionType } from '../model/Region';
 import { Coord2D } from '../../lib/model/Coord';
 import { Line } from '../../lib/model/Line';
 import { IGraph } from '../../lib/model/Graph';
@@ -7,7 +7,7 @@ import { SRandom } from '../../lib/SRandom';
 import { DelaySize } from '../generateDungeon';
 import { IGenerationSettings } from '../IGenerationSettings';
 
-export async function populateNodes(
+export async function populateRegions(
     dungeon: Dungeon,
     settings: IGenerationSettings,
     seed: number,
@@ -17,9 +17,11 @@ export async function populateNodes(
     const random = new SRandom(seed);
 
     let makeNode = () => {
-        let x = random.nextInRange(3, dungeon.width - 4);
-        let y = random.nextInRange(3, dungeon.height - 4);
-        return new Room(dungeon, x, y, random.nextIntInRange(0, RoomType.NUM_VALUES));
+        const x = random.nextInRange(3, dungeon.width - 4);
+        const y = random.nextInRange(3, dungeon.height - 4);
+        const influence = random.nextInRange(0.6, 1.8);
+        const regionType = random.nextIntInRange(0, RegionType.NUM_VALUES);
+        return new Region(dungeon, x, y, regionType, influence);
     };
 
     dungeon.nodes = [];

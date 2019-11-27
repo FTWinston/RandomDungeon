@@ -3,20 +3,19 @@ import { Dungeon } from './Dungeon';
 import { Pathway } from './Pathway';
 import { randomColor } from '../../lib/randomColor';
 
-export enum RoomType {
+export enum RegionType {
     Natural = 0,
     Artificial = 1,
 
     NUM_VALUES,
 }
 
-export class Room extends Coord2D {
+export class Region extends Coord2D {
     radius: number = 0.75;
     links: Pathway[] = [];
     readonly color: string;
-    regionInfluence = 1;
 
-    constructor(readonly parent: Dungeon, x: number, y: number, public roomType: RoomType) {
+    constructor(readonly parent: Dungeon, x: number, y: number, public roomType: RegionType, public regionInfluence = 1) {
         super(x, y);
         this.color = randomColor();
     }

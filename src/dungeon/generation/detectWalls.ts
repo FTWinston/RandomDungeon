@@ -1,5 +1,5 @@
 import { Dungeon } from '../model/Dungeon';
-import { RoomType } from '../model/Room';
+import { RegionType } from '../model/Region';
 import { DelaySize } from '../generateDungeon';
 import { Tile } from '../model/Tile';
 import { IGenerationSettings } from '../IGenerationSettings';
@@ -27,7 +27,7 @@ export async function detectWalls(
 
         // artificial rooms should have "corner" wall nodes filled in
         for (let test of tile.adjacentTiles) {
-            if (test.isFloor && test.room !== null && test.room.roomType === RoomType.Artificial) {
+            if (test.isFloor && test.room !== null && test.room.roomType === RegionType.Artificial) {
                 tile.isWall = true;
                 tile.room = test.room;
                 break;

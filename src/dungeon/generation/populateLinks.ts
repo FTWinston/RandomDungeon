@@ -1,5 +1,5 @@
 import { Dungeon } from '../model/Dungeon';
-import { Room, RoomType } from '../model/Room';
+import { Region, RegionType } from '../model/Region';
 import {
     computeDelauneyTriangulation,
     getUniqueLines,
@@ -23,10 +23,10 @@ export async function populateLinks(
     dungeon.relativeNeighbourhoodLines = [];
     dungeon.minimumSpanningLines = [];
 
-    const enclosingTriangle: [Room, Room, Room] = [
-        new Room(dungeon, 0, 0, RoomType.Artificial),
-        new Room(dungeon, 999999, 0, RoomType.Artificial),
-        new Room(dungeon, 0, 999999, RoomType.Artificial),
+    const enclosingTriangle: [Region, Region, Region] = [
+        new Region(dungeon, 0, 0, RegionType.Artificial),
+        new Region(dungeon, 999999, 0, RegionType.Artificial),
+        new Region(dungeon, 0, 999999, RegionType.Artificial),
     ];
 
     const delauneyTriangles = computeDelauneyTriangulation(dungeon.nodes, enclosingTriangle);

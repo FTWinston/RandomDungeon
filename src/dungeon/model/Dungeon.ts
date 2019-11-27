@@ -1,12 +1,12 @@
 import { Pathway } from './Pathway';
-import { Room } from './Room';
+import { Region } from './Region';
 import { Tile } from './Tile';
 import { IGraph } from '../../lib/model/Graph';
 import { Curve } from '../../lib/model/Curve';
 import { Hatching } from './Hatching';
 
-export class Dungeon implements IGraph<Room, Pathway> {
-    nodes: Room[] = [];
+export class Dungeon implements IGraph<Region, Pathway> {
+    nodes: Region[] = [];
     lines: Pathway[] = [];
     backdropPoints: Hatching[] = [];
     delauneyLines: Pathway[] = [];

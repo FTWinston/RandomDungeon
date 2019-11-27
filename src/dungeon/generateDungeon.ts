@@ -1,7 +1,7 @@
 import { Dungeon } from './model/Dungeon';
 import { GenerationSteps } from './GenerationSteps';
 import { SRandom } from '../lib/SRandom';
-import { populateNodes } from './generation/populateNodes';
+import { populateRegions } from './generation/populateRegions';
 import { populateLinks } from './generation/populateLinks';
 import { filterLinks } from './generation/filterLinks';
 import { createRooms } from './generation/createRooms';
@@ -48,7 +48,7 @@ export async function regenerateDungeon(
     
     const steps: Array<[GenerationSteps, GenerationStep, DelaySize]> = [
         [GenerationSteps.CreateTiles, createTiles, DelaySize.None],
-        [GenerationSteps.CreateNodes, populateNodes, DelaySize.Large],
+        [GenerationSteps.CreateNodes, populateRegions, DelaySize.Large],
         [GenerationSteps.AssociateTiles, associateTilesWithNodes, DelaySize.Large],
         [GenerationSteps.LinkNodes, populateLinks, DelaySize.Large],
         [GenerationSteps.FilterLinks, filterLinks, DelaySize.Large],
