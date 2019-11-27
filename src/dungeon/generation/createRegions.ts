@@ -7,7 +7,7 @@ import { SRandom } from '../../lib/SRandom';
 import { DelaySize } from '../generateDungeon';
 import { IGenerationSettings } from '../IGenerationSettings';
 
-export async function populateRegions(
+export async function createRegions(
     dungeon: Dungeon,
     settings: IGenerationSettings,
     seed: number,
