@@ -96,6 +96,8 @@ export const App: FunctionComponent = () => {
             <div className="App">
                 <Menu
                     dungeon={dungeon}
+                    canvas={canvas.current === null ? undefined : canvas.current.canvas}
+                    cellSize={cellSize}
                     redraw={redrawDungeon}
                     isGenerating={generating}
                     generationSettings={generationSettings}

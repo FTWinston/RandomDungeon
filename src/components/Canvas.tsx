@@ -9,7 +9,7 @@ interface FixedProps {
 export class FixedCanvas extends React.Component<FixedProps, {}> {
     public ctx?: CanvasRenderingContext2D;
     private root?: HTMLDivElement;
-    private canvas?: HTMLCanvasElement;
+    public canvas?: HTMLCanvasElement;
 
     constructor(props: FixedProps) {
         super(props);

@@ -12,7 +12,9 @@ import { MapSize } from './MapSize';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 
 interface Props extends AutoGenerateProps {
-    dungeon?: Dungeon;
+    dungeon: Dungeon;
+    canvas?: HTMLCanvasElement;
+    cellSize: number;
     redraw: (step: GenerationSteps) => void;
 }
 
@@ -45,6 +47,10 @@ export const Menu: FunctionComponent<Props> = props => {
                 <RegionPlacement
                     prev="/interactive/size"
                     next="/interactive/regions/size"
+                    dungeon={props.dungeon}
+                    dungeonDisplay={props.canvas}
+                    cellSize={props.cellSize}
+                    redraw={() => props.redraw(GenerationSteps.CreateNodes)}
                 />
             </Route>
             <Route path="/interactive/regions/size">
