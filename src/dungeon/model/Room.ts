@@ -14,6 +14,7 @@ export class Room extends Coord2D {
     radius: number = 0.75;
     links: Pathway[] = [];
     readonly color: string;
+    regionInfluence = 1;
 
     constructor(readonly parent: Dungeon, x: number, y: number, public roomType: RoomType) {
         super(x, y);

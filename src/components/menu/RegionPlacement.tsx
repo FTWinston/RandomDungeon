@@ -42,11 +42,11 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
             const cellX = e.offsetX / cellSize;
             const cellY = e.offsetY / cellSize;
 
-            e.preventDefault(); // TODO: this is never called
+            e.preventDefault();
 
             // remove associated node
-            const cell = getTileAt(dungeon, cellX, cellY);
-            if (cell === undefined || cell.room === undefined) {
+            const cell = dungeon.getTileAt(cellX, cellY);
+            if (cell === undefined || cell.room === null) {
                 return;
             }
 
@@ -63,24 +63,14 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
             dungeonDisplay.removeEventListener('click', leftClick);
             dungeonDisplay.removeEventListener('contextmenu', rightClick);
         };
-    }, [dungeonDisplay, dungeon, redraw, cellSize])
+    }, [dungeonDisplay, dungeon, redraw, cellSize]);
 
     return <div className="menu menu--regionPlacement">
         {prev}
         {next}
 
         <div className="menu__section">
-            Click the map to place region nodes. It will automatically calculate the region each cell belongs to. Right click to remove a region.
+            Left click the map to place region nodes. Right click to remove a region.
         </div>
     </div>
-}
-
-function getTileAt(dungeon: Dungeon, x: number, y: number) {
-    const col = dungeon.tilesByCoordinates[Math.floor(x)];
-
-    if (col === undefined) {
-        return;
-    }
-
-    return col[Math.floor(y)];
 }

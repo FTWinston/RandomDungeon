@@ -56,6 +56,10 @@ export const Menu: FunctionComponent<Props> = props => {
                 <RegionSize
                     prev="/interactive/regions/place"
                     next="/interactive/regions/types"
+                    dungeon={props.dungeon}
+                    dungeonDisplay={props.canvas}
+                    cellSize={props.cellSize}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.AssociateTiles)}
                 />
             </Route>
             <Route path="/interactive/regions/types">

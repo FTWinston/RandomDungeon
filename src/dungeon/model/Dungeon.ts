@@ -20,4 +20,14 @@ export class Dungeon implements IGraph<Room, Pathway> {
     tiles: Tile[] = [];
     tilesByCoordinates: Tile[][] = [];
     walls: Curve[] = [];
+
+    public getTileAt(x: number, y: number) {
+        const col = this.tilesByCoordinates[Math.floor(x)];
+
+        if (col === undefined) {
+            return;
+        }
+
+        return col[Math.floor(y)];
+    }
 }
