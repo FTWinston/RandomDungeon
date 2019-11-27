@@ -5,7 +5,7 @@ export function getClosest<TNode extends Coord<TNode>>(
     nodes: TNode[],
 ) {
     let bestDist = Number.MAX_VALUE;
-    let bestNode: TNode;
+    let bestNode: TNode | null = null;
 
     for (const node of nodes) {
         const dist = point.distanceSqTo(node);
@@ -15,5 +15,5 @@ export function getClosest<TNode extends Coord<TNode>>(
         }
     }
 
-    return bestNode!;
+    return bestNode;
 }

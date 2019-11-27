@@ -63,7 +63,6 @@ export const App: FunctionComponent = () => {
             generateTo,
         };
 
-        
         setGenerating(true);
 
         await regenerateDungeon(dungeon!, settings);
@@ -73,23 +72,17 @@ export const App: FunctionComponent = () => {
             animateFrom: GenerationSteps.Render,
         });
 
-        setDungeon(dungeon);
         setGenerating(false);
+
+        if (generateTo !== GenerationSteps.Render && canvas.current !== null) {
+            renderDungeon(dungeon, canvas.current.ctx!, determineRenderSettings(generateTo, true, cellSize));
+        }
     }
 
     const skip = () => generationSettings.animateFrom++;
     const finish = () => generationSettings.animateFrom = GenerationSteps.Render;
 
     useEffect(() => { generate(GenerationSteps.Render) }, []); // eslint-disable-line
-
-    const redrawDungeon = (step: GenerationSteps) => {
-        if (canvas.current === null) {
-            return;
-        }
-
-        // TODO: this doesn't seem to do anything
-        renderDungeon(dungeon, canvas.current.ctx!, determineRenderSettings(step, true, cellSize));
-    }
 
     return (    
         <Router>
@@ -98,7 +91,6 @@ export const App: FunctionComponent = () => {
                     dungeon={dungeon}
                     canvas={canvas.current === null ? undefined : canvas.current.canvas}
                     cellSize={cellSize}
-                    redraw={redrawDungeon}
                     isGenerating={generating}
                     generationSettings={generationSettings}
                     setGenerationSettings={setGenerationSettings}

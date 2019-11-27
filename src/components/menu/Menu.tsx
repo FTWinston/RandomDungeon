@@ -15,7 +15,6 @@ interface Props extends AutoGenerateProps {
     dungeon: Dungeon;
     canvas?: HTMLCanvasElement;
     cellSize: number;
-    redraw: (step: GenerationSteps) => void;
 }
 
 export const Menu: FunctionComponent<Props> = props => {
@@ -40,7 +39,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     next="/interactive/regions/place"
                     generationSettings={props.generationSettings}
                     setGenerationSettings={props.setGenerationSettings}
-                    redraw={() => props.redraw(GenerationSteps.CreateTiles)}
+                    redraw={() => props.regenerate(false, GenerationSteps.CreateTiles, GenerationSteps.CreateTiles)}
                 />
             </Route>
             <Route path="/interactive/regions/place">
@@ -50,11 +49,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeon={props.dungeon}
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
-                    redraw={() => {
-                        // TODO: why don't we see anything here?
-                        props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.AssociateTiles);
-                        props.redraw(GenerationSteps.AssociateTiles);
-                    }}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.AssociateTiles)}
                 />
             </Route>
             <Route path="/interactive/regions/size">

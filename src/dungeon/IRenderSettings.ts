@@ -40,6 +40,7 @@ export function determineRenderSettings(
         case GenerationSteps.CreateTiles:
             drawGrid = true;
             break;
+            
         case GenerationSteps.CreateNodes:
             nodeAlpha = 1;
             drawGrid = true;

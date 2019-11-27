@@ -29,32 +29,40 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
             return;
         }
 
-        const listener = (e: MouseEvent) => {
+        const leftClick = (e: MouseEvent) => {
             const cellX = e.offsetX / cellSize;
             const cellY = e.offsetY / cellSize;
 
-            if (e.button === 0) {
-                // add new node
-                dungeon.nodes.push(new Room(dungeon, cellX, cellY, RoomType.Artificial));
-            }
-            else {
-                e.preventDefault(); // TODO: this is never called
+            // add new node
+            dungeon.nodes.push(new Room(dungeon, cellX, cellY, RoomType.Artificial));
+            redraw();
+        };
 
-                // remove associated node
-                const cell = getTileAt(dungeon, cellX, cellY);
-                if (cell === undefined || cell.room === undefined) {
-                    return;
-                }
+        const rightClick = (e: MouseEvent) => {
+            const cellX = e.offsetX / cellSize;
+            const cellY = e.offsetY / cellSize;
 
-                const node = cell.room;
-                dungeon.nodes = dungeon.nodes.filter(n => n !== node);
+            e.preventDefault(); // TODO: this is never called
+
+            // remove associated node
+            const cell = getTileAt(dungeon, cellX, cellY);
+            if (cell === undefined || cell.room === undefined) {
+                return;
             }
+
+            const node = cell.room;
+            dungeon.nodes = dungeon.nodes.filter(n => n !== node);
 
             redraw();
         };
 
-        dungeonDisplay.addEventListener('click', listener);
-        return () => dungeonDisplay.removeEventListener('click', listener);
+        dungeonDisplay.addEventListener('click', leftClick);
+        dungeonDisplay.addEventListener('contextmenu', rightClick);
+
+        return () => {
+            dungeonDisplay.removeEventListener('click', leftClick);
+            dungeonDisplay.removeEventListener('contextmenu', rightClick);
+        };
     }, [dungeonDisplay, dungeon, redraw, cellSize])
 
     return <div className="menu menu--regionPlacement">
