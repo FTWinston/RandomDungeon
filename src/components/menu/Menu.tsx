@@ -13,7 +13,7 @@ import { Dungeon } from '../../dungeon/model/Dungeon';
 
 interface Props extends AutoGenerateProps {
     dungeon?: Dungeon;
-    setDungeon: (dungeon: Dungeon) => void;
+    redraw: (step: GenerationSteps) => void;
 }
 
 export const Menu: FunctionComponent<Props> = props => {
@@ -36,9 +36,9 @@ export const Menu: FunctionComponent<Props> = props => {
             <Route path="/interactive/size">
                 <MapSize
                     next="/interactive/regions/place"
-                    cellsWide={props.dungeon.width}
-                    cellsHigh={props.dungeon.height}
-                    setDungeon={props.setDungeon}
+                    generationSettings={props.generationSettings}
+                    setGenerationSettings={props.setGenerationSettings}
+                    redraw={() => props.redraw(GenerationSteps.CreateTiles)}
                 />
             </Route>
             <Route path="/interactive/regions/place">
@@ -60,10 +60,10 @@ export const Menu: FunctionComponent<Props> = props => {
             </Route>
             <Route path="/interactive" exact render={() => {
                 props.generate(GenerationSteps.FIRST_STEP); // clear the current map
-                return <Redirect to="/interactive/regions/place" />
+                return <Redirect to="/interactive/size" />
             }} />
             <Route path="/interactive">
-                <Redirect to="/interactive/regions/place" />
+                <Redirect to="/interactive/size" />
             </Route>
             <Route>
                 <Redirect to="/" />

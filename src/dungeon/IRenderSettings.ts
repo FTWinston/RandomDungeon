@@ -37,6 +37,9 @@ export function determineRenderSettings(
     let drawOutsidePoints = false;
 
     switch (generationStage) {
+        case GenerationSteps.CreateTiles:
+            drawGrid = true;
+            break;
         case GenerationSteps.CreateNodes:
             nodeAlpha = 1;
             drawGrid = true;

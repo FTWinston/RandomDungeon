@@ -14,7 +14,8 @@ import { IGenerationSettings } from '../dungeon/IGenerationSettings';
 export const App: FunctionComponent = () => {
     const canvas = React.useRef<FixedCanvas>(null);
 
-    const [dungeon, setDungeon] = useState<Dungeon>();
+    const [dungeon, setDungeon] = useState<Dungeon>(new Dungeon());
+    const [generating, setGenerating] = useState(false);
 
     const cellSize = 10;
 
@@ -44,11 +45,12 @@ export const App: FunctionComponent = () => {
         };
 
         setGenerationSettings(settings);
-        setDungeon(undefined);
+        setGenerating(true);
 
         const dungeon = await generateDungeon(settings);
 
         setDungeon(dungeon);
+        setGenerating(false);
     }
 
     const regenerate = async (animate: boolean, regenerateFrom: GenerationSteps, generateTo: GenerationSteps) => {
@@ -61,7 +63,8 @@ export const App: FunctionComponent = () => {
             generateTo,
         };
 
-        setDungeon(undefined);
+        
+        setGenerating(true);
 
         await regenerateDungeon(dungeon!, settings);
 
@@ -71,6 +74,7 @@ export const App: FunctionComponent = () => {
         });
 
         setDungeon(dungeon);
+        setGenerating(false);
     }
 
     const skip = () => generationSettings.animateFrom++;
@@ -78,13 +82,22 @@ export const App: FunctionComponent = () => {
 
     useEffect(() => { generate(GenerationSteps.Render) }, []); // eslint-disable-line
 
+    const redrawDungeon = (step: GenerationSteps) => {
+        if (canvas.current === null) {
+            return;
+        }
+
+        // TODO: this doesn't seem to do anything
+        renderDungeon(dungeon, canvas.current.ctx!, determineRenderSettings(step, true, cellSize));
+    }
+
     return (    
         <Router>
             <div className="App">
                 <Menu
                     dungeon={dungeon}
-                    setDungeon={setDungeon}
-                    isGenerating={dungeon === undefined}
+                    redraw={redrawDungeon}
+                    isGenerating={generating}
                     generationSettings={generationSettings}
                     setGenerationSettings={setGenerationSettings}
                     generate={generate}

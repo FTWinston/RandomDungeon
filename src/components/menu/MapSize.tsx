@@ -2,14 +2,14 @@ import * as React from 'react';
 import { FunctionComponent } from 'react';
 import { Link } from 'react-router-dom';
 import { RangeInput } from '../common/RangeInput';
+import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 
 interface Props {
     prev?: string;
     next?: string;
-    cellsWide: number;
-    cellsHigh: number;
-    setWidth: (val: number) => void;
-    setHeight: (val: number) => void;
+    generationSettings: IGenerationSettings;
+    setGenerationSettings: (settings: IGenerationSettings) => void;
+    redraw: () => void;
 }
 
 export const MapSize: FunctionComponent<Props> = props => {
@@ -21,6 +21,20 @@ export const MapSize: FunctionComponent<Props> = props => {
         ? undefined
         : <Link to={props.next}>next step</Link>
 
+    const setWidth = (val: number) => {
+        props.setGenerationSettings({
+            ...props.generationSettings,
+            cellsWide: val,
+        });
+    }
+
+    const setHeight = (val: number) => {
+        props.setGenerationSettings({
+            ...props.generationSettings,
+            cellsHigh: val,
+        });
+    }
+
     return <div className="menu menu--mapSize">
         {prev}
         {next}
@@ -30,16 +44,18 @@ export const MapSize: FunctionComponent<Props> = props => {
                 label="Width"
                 min={20}
                 max={200}
-                value={props.cellsWide}
-                onChange={props.setWidth}
+                value={props.generationSettings.cellsWide}
+                onChange={setWidth}
+                onChangeComplete={props.redraw}
             />
 
             <RangeInput
                 label="Height"
                 min={20}
                 max={200}
-                value={props.cellsHigh}
-                onChange={props.setHeight}
+                value={props.generationSettings.cellsHigh}
+                onChange={setHeight}
+                onChangeComplete={props.redraw}
             />
         </div>
     </div>
