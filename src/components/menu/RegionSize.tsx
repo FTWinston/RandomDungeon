@@ -1,11 +1,9 @@
 import * as React from 'react';
 import { FunctionComponent, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 
 interface Props {
-    prev?: string;
-    next?: string;
+    goBack: () => void;
     dungeon: Dungeon;
     dungeonDisplay?: HTMLElement;
     cellSize: number;
@@ -13,61 +11,52 @@ interface Props {
 }
 
 export const RegionSize: FunctionComponent<Props> = props => {
-    const prev = props.prev === undefined
-        ? undefined
-        : <Link to={props.prev}>previous step</Link>
+    const { dungeonDisplay, dungeon, redraw, cellSize } = props;
 
-    const next = props.next === undefined
-        ? undefined
-        : <Link to={props.next}>next step</Link>
+    useEffect(() => {
+        if (dungeonDisplay === undefined) {
+            return;
+        }
 
-        const { dungeonDisplay, dungeon, redraw, cellSize } = props;
-    
-        useEffect(() => {
-            if (dungeonDisplay === undefined) {
+        const leftClick = (e: MouseEvent) => {
+            const cellX = e.offsetX / cellSize;
+            const cellY = e.offsetY / cellSize;
+
+            const cell = dungeon.getTileAt(cellX, cellY);
+            if (cell === undefined || cell.region === null) {
                 return;
             }
-    
-            const leftClick = (e: MouseEvent) => {
-                const cellX = e.offsetX / cellSize;
-                const cellY = e.offsetY / cellSize;
 
-                const cell = dungeon.getTileAt(cellX, cellY);
-                if (cell === undefined || cell.region === null) {
-                    return;
-                }
+            cell.region.regionInfluence *= 1.2;
+            redraw();
+        };
 
-                cell.region.regionInfluence *= 1.2;
-                redraw();
-            };
-    
-            const rightClick = (e: MouseEvent) => {
-                const cellX = e.offsetX / cellSize;
-                const cellY = e.offsetY / cellSize;
-    
-                e.preventDefault();
+        const rightClick = (e: MouseEvent) => {
+            const cellX = e.offsetX / cellSize;
+            const cellY = e.offsetY / cellSize;
 
-                const cell = dungeon.getTileAt(cellX, cellY);
-                if (cell === undefined || cell.region === null) {
-                    return;
-                }
+            e.preventDefault();
 
-                cell.region.regionInfluence /= 1.2;
-                redraw();
-            };
-    
-            dungeonDisplay.addEventListener('click', leftClick);
-            dungeonDisplay.addEventListener('contextmenu', rightClick);
-    
-            return () => {
-                dungeonDisplay.removeEventListener('click', leftClick);
-                dungeonDisplay.removeEventListener('contextmenu', rightClick);
-            };
-        }, [dungeonDisplay, dungeon, redraw, cellSize]);
+            const cell = dungeon.getTileAt(cellX, cellY);
+            if (cell === undefined || cell.region === null) {
+                return;
+            }
+
+            cell.region.regionInfluence /= 1.2;
+            redraw();
+        };
+
+        dungeonDisplay.addEventListener('click', leftClick);
+        dungeonDisplay.addEventListener('contextmenu', rightClick);
+
+        return () => {
+            dungeonDisplay.removeEventListener('click', leftClick);
+            dungeonDisplay.removeEventListener('contextmenu', rightClick);
+        };
+    }, [dungeonDisplay, dungeon, redraw, cellSize]);
 
     return <div className="menu menu--regionSize">
-        {prev}
-        {next}
+        <button className="menu__button menu__button--back" onClick={props.goBack}>Go back</button>
         
         <div className="menu__section">
             Left click on a region to increase its size. Right click to decrease its size.

@@ -1,25 +1,14 @@
 import * as React from 'react';
 import { FunctionComponent } from 'react';
-import { Link } from 'react-router-dom';
 
 interface Props {
-    prev?: string;
-    next?: string;
+    goBack: () => void;
 }
 
 export const RegionTypes: FunctionComponent<Props> = props => {
-    const prev = props.prev === undefined
-        ? undefined
-        : <Link to={props.prev}>previous step</Link>
-
-    const next = props.next === undefined
-        ? undefined
-        : <Link to={props.next}>next step</Link>
-
     return <div className="menu menu--regionTypes">
-        TODO
+        <button className="menu__button menu__button--back" onClick={props.goBack}>Go back</button>
 
-        {prev}
-        {next}
+        TODO
     </div>
 }

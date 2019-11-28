@@ -1,12 +1,10 @@
 import * as React from 'react';
 import { FunctionComponent, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 import { Region, RegionType } from '../../dungeon/model/Region';
 
 interface Props {
-    prev?: string;
-    next?: string;
+    goBack: () => void;
     dungeon: Dungeon;
     dungeonDisplay?: HTMLElement;
     cellSize: number;
@@ -14,14 +12,6 @@ interface Props {
 }
 
 export const RegionPlacement: FunctionComponent<Props> = props => {
-    const prev = props.prev === undefined
-        ? undefined
-        : <Link to={props.prev}>previous step</Link>
-
-    const next = props.next === undefined
-        ? undefined
-        : <Link to={props.next}>next step</Link>
-
     const { dungeonDisplay, dungeon, redraw, cellSize } = props;
     
     useEffect(() => {
@@ -67,8 +57,7 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
     }, [dungeonDisplay, dungeon, redraw, cellSize]);
 
     return <div className="menu menu--regionPlacement">
-        {prev}
-        {next}
+        <button className="menu__button menu__button--back" onClick={props.goBack}>Go back</button>
 
         <div className="menu__section">
             Left click the map to place region nodes. Right click to remove a region.

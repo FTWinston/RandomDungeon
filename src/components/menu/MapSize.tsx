@@ -1,26 +1,16 @@
 import * as React from 'react';
 import { FunctionComponent } from 'react';
-import { Link } from 'react-router-dom';
 import { RangeInput } from '../common/RangeInput';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 
 interface Props {
-    prev?: string;
-    next?: string;
+    goBack: () => void;
     generationSettings: IGenerationSettings;
     setGenerationSettings: (settings: IGenerationSettings) => void;
     redraw: () => void;
 }
 
 export const MapSize: FunctionComponent<Props> = props => {
-    const prev = props.prev === undefined
-        ? undefined
-        : <Link to={props.prev}>previous step</Link>
-
-    const next = props.next === undefined
-        ? undefined
-        : <Link to={props.next}>next step</Link>
-
     const setWidth = (val: number) => {
         props.setGenerationSettings({
             ...props.generationSettings,
@@ -36,8 +26,7 @@ export const MapSize: FunctionComponent<Props> = props => {
     }
 
     return <div className="menu menu--mapSize">
-        {prev}
-        {next}
+        <button className="menu__button menu__button--back" onClick={props.goBack}>Go back</button>
     
         <div className="menu__group">
             <RangeInput

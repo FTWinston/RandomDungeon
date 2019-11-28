@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { FunctionComponent, useState, useEffect } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
 import { Menu } from './menu/Menu';
 import { FixedCanvas } from './Canvas';
 import { Dungeon } from '../dungeon/model/Dungeon';
@@ -85,27 +84,25 @@ export const App: FunctionComponent = () => {
     useEffect(() => { generate(GenerationSteps.Render) }, []); // eslint-disable-line
 
     return (    
-        <Router>
-            <div className="App">
-                <Menu
-                    dungeon={dungeon}
-                    canvas={canvas.current === null ? undefined : canvas.current.canvas}
-                    cellSize={cellSize}
-                    isGenerating={generating}
-                    generationSettings={generationSettings}
-                    setGenerationSettings={setGenerationSettings}
-                    generate={generate}
-                    regenerate={regenerate}
-                    skip={skip}
-                    finish={finish}
-                />
-                <FixedCanvas
-                    className="dungeonDisplay"
-                    width={cellSize * generationSettings.cellsWide}
-                    height={cellSize * generationSettings.cellsHigh}
-                    ref={canvas}
-                />
-            </div>
-        </Router>
+        <div className="App">
+            <Menu
+                dungeon={dungeon}
+                canvas={canvas.current === null ? undefined : canvas.current.canvas}
+                cellSize={cellSize}
+                isGenerating={generating}
+                generationSettings={generationSettings}
+                setGenerationSettings={setGenerationSettings}
+                generate={generate}
+                regenerate={regenerate}
+                skip={skip}
+                finish={finish}
+            />
+            <FixedCanvas
+                className="dungeonDisplay"
+                width={cellSize * generationSettings.cellsWide}
+                height={cellSize * generationSettings.cellsHigh}
+                ref={canvas}
+            />
+        </div>
     );
 }

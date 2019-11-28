@@ -1,82 +1,97 @@
 import * as React from 'react';
 import './Menu.css';
-import { FunctionComponent } from 'react';
-import { Switch, Route, Redirect } from 'react-router-dom';
-import { AutoGenerate, Props as AutoGenerateProps } from './AutoGenerate';
-import { Download } from './Download';
+import { FunctionComponent, useState, useMemo } from 'react';
+import { Generate } from './Generate';
+import { Dungeon } from '../../dungeon/model/Dungeon';
+import { MapSize } from './MapSize';
+import { GenerationSteps } from '../../dungeon/GenerationSteps';
+import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { RegionPlacement } from './RegionPlacement';
 import { RegionSize } from './RegionSize';
-import { RegionTypes } from './RegionTypes';
-import { GenerationSteps } from '../../dungeon/GenerationSteps';
-import { MapSize } from './MapSize';
-import { Dungeon } from '../../dungeon/model/Dungeon';
 
-interface Props extends AutoGenerateProps {
+interface Props {
+    isGenerating: boolean;
     dungeon: Dungeon;
     canvas?: HTMLCanvasElement;
     cellSize: number;
+    generationSettings: Readonly<IGenerationSettings>;
+    setGenerationSettings: (settings: IGenerationSettings) => void;
+    generate: (generateTo: GenerationSteps) => Promise<void>;
+    regenerate: (animate: boolean, generateFrom: GenerationSteps, generateTo: GenerationSteps) => Promise<void>;
+    skip: () => void;
+    finish: () => void;
+}
+
+enum MenuPage {
+    Main,
+    Size,
+    AddRegions,
+    ResizeRegions,
+    RegionTypes,
+    Connections,
+    Renders,
 }
 
 export const Menu: FunctionComponent<Props> = props => {
-    return (
-        <Switch>
-            <Route path="/" exact>
-                <AutoGenerate
-                    isGenerating={props.isGenerating}
+    const [currentPage, setCurrentPage] = useState(MenuPage.Main);
+
+    const switchToMain = useMemo(() => () => setCurrentPage(MenuPage.Main), []);
+    const switchToSize = useMemo(() => () => setCurrentPage(MenuPage.Size), []);
+    const switchToAddRegions = useMemo(() => () => setCurrentPage(MenuPage.AddRegions), []);
+    const switchToResizeRegions = useMemo(() => () => setCurrentPage(MenuPage.ResizeRegions), []);
+    const switchToRegionTypes = useMemo(() => () => setCurrentPage(MenuPage.RegionTypes), []);
+    const switchToConnections = useMemo(() => () => setCurrentPage(MenuPage.Connections), []);
+    const switchToRenders = useMemo(() => () => setCurrentPage(MenuPage.Renders), []);
+
+    switch (currentPage) {
+        case MenuPage.Size:
+            return (
+                <MapSize
+                    goBack={switchToMain}
                     generationSettings={props.generationSettings}
                     setGenerationSettings={props.setGenerationSettings}
+                    redraw={() => props.regenerate(false, GenerationSteps.FIRST_STEP, GenerationSteps.Render)}
+                />
+            );
+        case MenuPage.AddRegions:
+            return (
+                <RegionPlacement
+                    goBack={switchToMain}
+                    dungeon={props.dungeon}
+                    dungeonDisplay={props.canvas}
+                    cellSize={props.cellSize}
+                    redraw={() => props.regenerate(false, GenerationSteps.FIRST_STEP, GenerationSteps.Render)}
+                />
+            );
+        case MenuPage.ResizeRegions:
+            return (
+                <RegionSize
+                    goBack={switchToMain}
+                    dungeon={props.dungeon}
+                    dungeonDisplay={props.canvas}
+                    cellSize={props.cellSize}
+                    redraw={() => props.regenerate(false, GenerationSteps.FIRST_STEP, GenerationSteps.Render)}
+                />
+            );
+
+        // TODO: other pages
+
+        default:
+            return (
+                <Generate
+                    isGenerating={props.isGenerating}
                     generate={props.generate}
                     regenerate={props.regenerate}
                     skip={props.skip}
                     finish={props.finish}
+
+                    showSize={switchToSize}
+                    showAddRegions={switchToAddRegions}
+                    showResizeRegions={switchToResizeRegions}
+                    showRegionTypes={switchToRegionTypes}
+                    showConnections={switchToConnections}
+                    showRenders={switchToRenders}
                 />
-            </Route>
-            <Route path="/download">
-                <Download />
-            </Route>
-            <Route path="/interactive/size">
-                <MapSize
-                    next="/interactive/regions/place"
-                    generationSettings={props.generationSettings}
-                    setGenerationSettings={props.setGenerationSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.CreateTiles, GenerationSteps.CreateTiles)}
-                />
-            </Route>
-            <Route path="/interactive/regions/place">
-                <RegionPlacement
-                    prev="/interactive/size"
-                    next="/interactive/regions/size"
-                    dungeon={props.dungeon}
-                    dungeonDisplay={props.canvas}
-                    cellSize={props.cellSize}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.AssociateTiles)}
-                />
-            </Route>
-            <Route path="/interactive/regions/size">
-                <RegionSize
-                    prev="/interactive/regions/place"
-                    next="/interactive/regions/types"
-                    dungeon={props.dungeon}
-                    dungeonDisplay={props.canvas}
-                    cellSize={props.cellSize}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.AssociateTiles)}
-                />
-            </Route>
-            <Route path="/interactive/regions/types">
-                <RegionTypes
-                    prev="/interactive/regions/size"
-                />
-            </Route>
-            <Route path="/interactive" exact render={() => {
-                props.generate(GenerationSteps.FIRST_STEP); // clear the current map
-                return <Redirect to="/interactive/size" />
-            }} />
-            <Route path="/interactive">
-                <Redirect to="/interactive/size" />
-            </Route>
-            <Route>
-                <Redirect to="/" />
-            </Route>
-        </Switch>
-    )
+            );
+    }
 };
