@@ -34,7 +34,8 @@ export const RegionPlacement: FunctionComponent<Props> = props => {
             const cellY = e.offsetY / cellSize;
 
             // add new node
-            dungeon.nodes.push(new Region(dungeon, cellX, cellY, RegionType.Artificial));
+            const regionType = Math.floor(Math.random() * RegionType.NUM_VALUES);
+            dungeon.nodes.push(new Region(dungeon, cellX, cellY, regionType));
             redraw();
         };
 

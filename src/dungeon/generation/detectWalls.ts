@@ -27,7 +27,7 @@ export async function detectWalls(
 
         // artificial rooms should have "corner" wall nodes filled in
         for (let test of tile.adjacentTiles) {
-            if (test.isFloor && test.region !== null && test.region.roomType === RegionType.Artificial) {
+            if (test.isFloor && test.region !== null && test.region.regionType === RegionType.Artificial) {
                 tile.isWall = true;
                 tile.region = test.region;
                 break;

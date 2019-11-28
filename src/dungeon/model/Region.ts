@@ -15,7 +15,7 @@ export class Region extends Coord2D {
     links: Pathway[] = [];
     readonly color: string;
 
-    constructor(readonly parent: Dungeon, x: number, y: number, public roomType: RegionType, public regionInfluence = 1) {
+    constructor(readonly parent: Dungeon, x: number, y: number, public regionType: RegionType, public regionInfluence = 1) {
         super(x, y);
         this.color = randomColor();
     }

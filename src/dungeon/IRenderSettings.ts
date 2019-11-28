@@ -54,25 +54,25 @@ export function determineRenderSettings(
 
         case GenerationSteps.LinkNodes:
             nodeAlpha = 1;
-            regionAlpha = 0.33;
+            regionAlpha = 0.5;
             drawGraph = true;
             drawGrid = true;
             break;
 
         case GenerationSteps.FilterLinks:
             nodeAlpha = 0.75;
-            regionAlpha = 0.25;
+            regionAlpha = 0.55;
             drawNodeLinks = true;
             drawGrid = true;
             break;
 
         case GenerationSteps.ExpandLines:
-            regionAlpha = 0.25;
+            regionAlpha = 0.5;
             drawGrid = true;
             break;
 
         case GenerationSteps.CreateRooms:
-            regionAlpha = 0.25;
+            regionAlpha = 0.5;
             drawGrid = true;
             break;
 
