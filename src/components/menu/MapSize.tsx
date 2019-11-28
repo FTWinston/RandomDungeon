@@ -1,12 +1,16 @@
 import * as React from 'react';
-import { FunctionComponent } from 'react';
+import { FunctionComponent, useEffect } from 'react';
 import { RangeInput } from '../common/RangeInput';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
+import { IRenderSettings, determineRenderSettings } from '../../dungeon/IRenderSettings';
+import { GenerationSteps } from '../../dungeon/GenerationSteps';
 
 interface Props {
     goBack: () => void;
     generationSettings: IGenerationSettings;
     setGenerationSettings: (settings: IGenerationSettings) => void;
+    cellSize: number;
+    setRenderSettings: (settings: IRenderSettings) => void;
     redraw: () => void;
 }
 
@@ -24,6 +28,13 @@ export const MapSize: FunctionComponent<Props> = props => {
             cellsHigh: val,
         });
     }
+
+    useEffect(() => {
+        props.setRenderSettings({
+            ...determineRenderSettings(GenerationSteps.DetectWalls, true, props.cellSize),
+            regionAlpha: 0.5,
+        });
+    }, []); // eslint-disable-line
 
     return <div className="menu menu--mapSize">
         <button className="menu__button menu__button--back" onClick={props.goBack}>Go back</button>

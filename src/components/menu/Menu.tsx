@@ -8,6 +8,7 @@ import { GenerationSteps } from '../../dungeon/GenerationSteps';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { RegionPlacement } from './RegionPlacement';
 import { RegionSize } from './RegionSize';
+import { IRenderSettings } from '../../dungeon/IRenderSettings';
 
 interface Props {
     isGenerating: boolean;
@@ -16,6 +17,7 @@ interface Props {
     cellSize: number;
     generationSettings: Readonly<IGenerationSettings>;
     setGenerationSettings: (settings: IGenerationSettings) => void;
+    setRenderSettings: (settings: IRenderSettings) => void;
     generate: (generateTo: GenerationSteps) => Promise<void>;
     regenerate: (animate: boolean, generateFrom: GenerationSteps, generateTo: GenerationSteps) => Promise<void>;
     skip: () => void;
@@ -50,7 +52,9 @@ export const Menu: FunctionComponent<Props> = props => {
                     goBack={switchToMain}
                     generationSettings={props.generationSettings}
                     setGenerationSettings={props.setGenerationSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.FIRST_STEP, GenerationSteps.Render)}
+                    cellSize={props.cellSize}
+                    setRenderSettings={props.setRenderSettings}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
                 />
             );
         case MenuPage.AddRegions:
@@ -60,7 +64,8 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeon={props.dungeon}
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
-                    redraw={() => props.regenerate(false, GenerationSteps.FIRST_STEP, GenerationSteps.Render)}
+                    setRenderSettings={props.setRenderSettings}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
                 />
             );
         case MenuPage.ResizeRegions:
@@ -70,7 +75,8 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeon={props.dungeon}
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
-                    redraw={() => props.regenerate(false, GenerationSteps.FIRST_STEP, GenerationSteps.Render)}
+                    setRenderSettings={props.setRenderSettings}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
                 />
             );
 
@@ -80,6 +86,8 @@ export const Menu: FunctionComponent<Props> = props => {
             return (
                 <Generate
                     isGenerating={props.isGenerating}
+                    setRenderSettings={props.setRenderSettings}
+                    cellSize={props.cellSize}
                     generate={props.generate}
                     regenerate={props.regenerate}
                     skip={props.skip}

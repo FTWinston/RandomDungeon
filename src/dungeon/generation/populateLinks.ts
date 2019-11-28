@@ -24,9 +24,9 @@ export async function populateLinks(
     dungeon.minimumSpanningLines = [];
 
     const enclosingTriangle: [Region, Region, Region] = [
-        new Region(dungeon, 0, 0, RegionType.Artificial),
-        new Region(dungeon, 999999, 0, RegionType.Artificial),
-        new Region(dungeon, 0, 999999, RegionType.Artificial),
+        new Region(dungeon, 0, 0, RegionType.Artificial, ''),
+        new Region(dungeon, 999999, 0, RegionType.Artificial, ''),
+        new Region(dungeon, 0, 999999, RegionType.Artificial, ''),
     ];
 
     const delauneyTriangles = computeDelauneyTriangulation(dungeon.nodes, enclosingTriangle);

@@ -7,7 +7,7 @@ import './App.css';
 import { renderDungeon } from '../dungeon/renderDungeon';
 import { generateDungeon, regenerateDungeon } from '../dungeon/generateDungeon';
 import { GenerationSteps } from '../dungeon/GenerationSteps';
-import { determineRenderSettings } from '../dungeon/IRenderSettings';
+import { determineRenderSettings, IRenderSettings } from '../dungeon/IRenderSettings';
 import { IGenerationSettings } from '../dungeon/IGenerationSettings';
 
 export const App: FunctionComponent = () => {
@@ -18,6 +18,8 @@ export const App: FunctionComponent = () => {
 
     const cellSize = 10;
 
+    const [renderSettings, setRenderSettings] = useState<IRenderSettings>(determineRenderSettings(GenerationSteps.Render, true, cellSize));
+    
     const [generationSettings, setGenerationSettings] = useState<IGenerationSettings>({
         seed: 0,
         generateFrom: GenerationSteps.FIRST_STEP,
@@ -50,6 +52,10 @@ export const App: FunctionComponent = () => {
 
         setDungeon(dungeon);
         setGenerating(false);
+
+        if (canvas.current !== null) {
+            renderDungeon(dungeon, canvas.current.ctx!, renderSettings);
+        }
     }
 
     const regenerate = async (animate: boolean, regenerateFrom: GenerationSteps, generateTo: GenerationSteps) => {
@@ -73,8 +79,8 @@ export const App: FunctionComponent = () => {
 
         setGenerating(false);
 
-        if (generateTo !== GenerationSteps.Render && canvas.current !== null) {
-            renderDungeon(dungeon, canvas.current.ctx!, determineRenderSettings(generateTo, true, cellSize));
+        if (canvas.current !== null) {
+            renderDungeon(dungeon, canvas.current.ctx!, renderSettings);
         }
     }
 
@@ -82,6 +88,14 @@ export const App: FunctionComponent = () => {
     const finish = () => generationSettings.animateFrom = GenerationSteps.Render;
 
     useEffect(() => { generate(GenerationSteps.Render) }, []); // eslint-disable-line
+
+    const setRenderSettingsAndRender = (renderSettings: IRenderSettings) => {
+        setRenderSettings(renderSettings);
+
+        if (canvas.current !== null) {
+            renderDungeon(dungeon, canvas.current.ctx!, renderSettings);
+        }
+    }
 
     return (    
         <div className="App">
@@ -92,6 +106,7 @@ export const App: FunctionComponent = () => {
                 isGenerating={generating}
                 generationSettings={generationSettings}
                 setGenerationSettings={setGenerationSettings}
+                setRenderSettings={setRenderSettingsAndRender}
                 generate={generate}
                 regenerate={regenerate}
                 skip={skip}

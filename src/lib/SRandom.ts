@@ -49,6 +49,14 @@ export class SRandom {
         return Math.floor(this.nextInRange(minInclusive, maxExclusive));
     }
 
+    nextColor() {
+        const colorChars = ['7', '8', '9', 'a', 'b', 'c', 'd'];
+        const r = colorChars[this.nextIntInRange(0, colorChars.length)];
+        const g = colorChars[this.nextIntInRange(0, colorChars.length)];
+        const b = colorChars[this.nextIntInRange(0, colorChars.length)];
+        return `#${r}${g}${b}`;
+    }
+
     private mash() {
         let n = 0xefc8249d;
 
