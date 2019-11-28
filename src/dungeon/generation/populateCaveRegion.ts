@@ -24,7 +24,7 @@ export async function populateCaveRegion(
         }
     }
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
         runCellularAutomataStep(mutableTiles);
         
         if (subStepComplete) {

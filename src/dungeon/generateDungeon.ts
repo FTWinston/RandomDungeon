@@ -89,7 +89,7 @@ export async function regenerateDungeon(
         }
     }
 
-    settings.redraw(dungeon, GenerationSteps.CreateRooms, true);
+    settings.redraw(dungeon, GenerationSteps.Render, true);
 }
 
 function delay(milliseconds: number): Promise<void> {
