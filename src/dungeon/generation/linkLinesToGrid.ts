@@ -15,9 +15,22 @@ export async function linkLinesToGrid(
         let x1 = Math.floor(link.to.x);
         let y0 = Math.floor(link.from.y);
         let y1 = Math.floor(link.to.y);
+
+        const col0 = dungeon.tilesByCoordinates[x0];
+        if (col0 !== undefined) {
+            const cell0 = col0[y0];
+            if (cell0 !== undefined) {
+                cell0.isFloor = true;
+            }
+        }
         
-        dungeon.tilesByCoordinates[x0][y0].isFloor = true;
-        dungeon.tilesByCoordinates[x1][y1].isFloor = true;
+        const col1 = dungeon.tilesByCoordinates[x1];
+        if (col1 !== undefined) {
+            const cell1 = col1[y1];
+            if (cell1 !== undefined) {
+                cell1.isFloor = true;
+            }
+        }
 
         let steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
         if (steep) { // swap x & y, ensure not steep
