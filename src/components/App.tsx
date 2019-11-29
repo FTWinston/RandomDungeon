@@ -59,22 +59,25 @@ export const App: FunctionComponent = () => {
     }
 
     const regenerate = async (animate: boolean, regenerateFrom: GenerationSteps, generateTo: GenerationSteps) => {
-        const settings = {
+        // clear the grid if regenerating
+        if (regenerateFrom !== GenerationSteps.FIRST_STEP) {
+            await regenerateDungeon(dungeon, {
+                ...generationSettings,
+                animateFrom: GenerationSteps.Render,
+                generateFrom: GenerationSteps.CreateTiles,
+                generateTo: GenerationSteps.CreateTiles,
+            });
+        }
+
+        setGenerating(true);
+
+        await regenerateDungeon(dungeon, {
             ...generationSettings,
             animateFrom: animate
                 ? regenerateFrom
                 : GenerationSteps.Render,
             generateFrom: regenerateFrom,
             generateTo,
-        };
-
-        setGenerating(true);
-
-        await regenerateDungeon(dungeon!, settings);
-
-        setGenerationSettings({
-            ...settings,
-            animateFrom: GenerationSteps.Render,
         });
 
         setGenerating(false);
