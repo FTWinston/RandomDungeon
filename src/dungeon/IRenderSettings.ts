@@ -19,6 +19,7 @@ export interface IRenderSettings {
     cellSize: number,
     wallWidth: number,
     hatchingWidth: number,
+    drawWallsAsFloor: boolean,
 }
 
 export function determineRenderSettings(   
@@ -35,6 +36,7 @@ export function determineRenderSettings(
     let highlightWallCurves = false;
     let drawOutside = false;
     let drawOutsidePoints = false;
+    let drawWallsAsFloor = true;
 
     switch (generationStage) {
         case GenerationSteps.CreateTiles:
@@ -119,5 +121,6 @@ export function determineRenderSettings(
         wallWidth: cellSize,
         floorGridWidth: 1,
         hatchingWidth: cellSize * 0.175,
+        drawWallsAsFloor,
     }
 }

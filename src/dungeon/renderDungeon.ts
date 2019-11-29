@@ -78,14 +78,15 @@ function drawNode(room: Region, ctx: CanvasRenderingContext2D, settings: IRender
 }
 
 function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, settings: IRenderSettings) {
-    if (tile.isWall && !tile.isFloor) {
-        ctx.fillStyle = '#333';
-        ctx.fillRect(tile.x * settings.cellSize, tile.y * settings.cellSize, settings.cellSize, settings.cellSize);
-    } else if (tile.isFloor) {
+    if (tile.isFloor && (!tile.isWall || settings.drawWallsAsFloor)) {
         ctx.fillStyle = settings.floorColor;
         ctx.fillRect(tile.x * settings.cellSize, tile.y * settings.cellSize, settings.cellSize, settings.cellSize);
         ctx.strokeStyle = settings.floorGridColor;
         ctx.strokeRect(tile.x * settings.cellSize, tile.y * settings.cellSize, settings.cellSize, settings.cellSize);
+    }
+    else if (tile.isWall) {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(tile.x * settings.cellSize, tile.y * settings.cellSize, settings.cellSize, settings.cellSize);
     }
 
     if (settings.regionAlpha > 0 && tile.region !== null) {

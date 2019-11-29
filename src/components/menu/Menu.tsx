@@ -49,7 +49,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     setGenerationSettings={props.setGenerationSettings}
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.CreateRooms)}
                 />
             );
         case MenuPage.Regions:

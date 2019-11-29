@@ -32,7 +32,7 @@ export const MapSize: FunctionComponent<Props> = props => {
     useEffect(() => {
         props.setRenderSettings({
             ...determineRenderSettings(GenerationSteps.DetectWalls, true, props.cellSize),
-            regionAlpha: 0.5,
+            drawWallsAsFloor: false,
         });
     }, []); // eslint-disable-line
 
