@@ -24,7 +24,7 @@ export const Generate: FunctionComponent<Props> = props => {
     const { generate, regenerate } = props;
 
     const generateNew = useMemo(() => (() => generate(GenerationSteps.Render)), [generate]);
-    const animate = useMemo(() => (() => regenerate(true, GenerationSteps.FIRST_STEP, GenerationSteps.Render)), [regenerate]);
+    const animate = useMemo(() => (() => regenerate(true, GenerationSteps.AssociateTiles, GenerationSteps.Render)), [regenerate]);
 
     const generateOrSkip = props.isGenerating
         ? <button className="menu__button">Skip step</button>
