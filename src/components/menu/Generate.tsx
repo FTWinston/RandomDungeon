@@ -49,6 +49,8 @@ export const Generate: FunctionComponent<Props> = props => {
         <button className="menu__link" onClick={props.showConnections}>Regions connections</button>
         <button className="menu__link" onClick={props.showRenders}>Renders</button>
 
+        <div className="menu__spacer" />
+
         {generateOrSkip}
         {animateOrFinish}
     </div>

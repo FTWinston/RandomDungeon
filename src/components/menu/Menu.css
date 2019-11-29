@@ -15,7 +15,7 @@
     cursor: pointer;
 }
 
-.menu__group {
+.menu__group, .menu__spacer {
     flex-grow: 1;
 }
 
