@@ -6,8 +6,7 @@ import { Dungeon } from '../../dungeon/model/Dungeon';
 import { MapSize } from './MapSize';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
-import { RegionPlacement } from './RegionPlacement';
-import { RegionSize } from './RegionSize';
+import { Regions } from './Regions';
 import { IRenderSettings } from '../../dungeon/IRenderSettings';
 
 interface Props {
@@ -27,9 +26,7 @@ interface Props {
 enum MenuPage {
     Main,
     Size,
-    AddRegions,
-    ResizeRegions,
-    RegionTypes,
+    Regions,
     Connections,
     Renders,
 }
@@ -39,9 +36,7 @@ export const Menu: FunctionComponent<Props> = props => {
 
     const switchToMain = useMemo(() => () => setCurrentPage(MenuPage.Main), []);
     const switchToSize = useMemo(() => () => setCurrentPage(MenuPage.Size), []);
-    const switchToAddRegions = useMemo(() => () => setCurrentPage(MenuPage.AddRegions), []);
-    const switchToResizeRegions = useMemo(() => () => setCurrentPage(MenuPage.ResizeRegions), []);
-    const switchToRegionTypes = useMemo(() => () => setCurrentPage(MenuPage.RegionTypes), []);
+    const switchToRegions = useMemo(() => () => setCurrentPage(MenuPage.Regions), []);
     const switchToConnections = useMemo(() => () => setCurrentPage(MenuPage.Connections), []);
     const switchToRenders = useMemo(() => () => setCurrentPage(MenuPage.Renders), []);
 
@@ -57,20 +52,9 @@ export const Menu: FunctionComponent<Props> = props => {
                     redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
                 />
             );
-        case MenuPage.AddRegions:
+        case MenuPage.Regions:
             return (
-                <RegionPlacement
-                    goBack={switchToMain}
-                    dungeon={props.dungeon}
-                    dungeonDisplay={props.canvas}
-                    cellSize={props.cellSize}
-                    setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
-                />
-            );
-        case MenuPage.ResizeRegions:
-            return (
-                <RegionSize
+                <Regions
                     goBack={switchToMain}
                     dungeon={props.dungeon}
                     dungeonDisplay={props.canvas}
@@ -94,9 +78,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     finish={props.finish}
 
                     showSize={switchToSize}
-                    showAddRegions={switchToAddRegions}
-                    showResizeRegions={switchToResizeRegions}
-                    showRegionTypes={switchToRegionTypes}
+                    showRegions={switchToRegions}
                     showConnections={switchToConnections}
                     showRenders={switchToRenders}
                 />

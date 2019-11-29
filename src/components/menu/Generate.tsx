@@ -13,9 +13,7 @@ export interface Props {
     finish: () => void;
 
     showSize: () => void;
-    showAddRegions: () => void;
-    showResizeRegions: () => void;
-    showRegionTypes: () => void;
+    showRegions: () => void;
     showConnections: () => void;
     showRenders: () => void;
 }
@@ -43,9 +41,7 @@ export const Generate: FunctionComponent<Props> = props => {
     
     return <div className="menu menu--autoGenerate">
         <button className="menu__link" onClick={props.showSize}>Map size</button>
-        <button className="menu__link" onClick={props.showAddRegions}>Add/remove regions</button>
-        <button className="menu__link" onClick={props.showResizeRegions}>Resize regions</button>
-        <button className="menu__link" onClick={props.showRegionTypes}>Change region types</button>
+        <button className="menu__link" onClick={props.showRegions}>Edit regions</button>
         <button className="menu__link" onClick={props.showConnections}>Regions connections</button>
         <button className="menu__link" onClick={props.showRenders}>Renders</button>
 

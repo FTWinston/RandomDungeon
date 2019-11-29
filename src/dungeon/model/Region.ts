@@ -7,6 +7,7 @@ export enum RegionType {
     Artificial = 1,
 
     NUM_VALUES,
+    FIRST_VALUE = 0,
 }
 
 export class Region extends Coord2D {
