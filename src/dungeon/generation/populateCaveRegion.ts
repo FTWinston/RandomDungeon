@@ -7,10 +7,9 @@ import { Tile } from '../model/Tile';
 export async function populateCaveRegion(
     dungeon: Dungeon,
     region: Region,
-    seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    const random = new SRandom(seed);
+    const random = new SRandom(region.seed);
     
     const regionTiles = dungeon.tiles.filter(t => t.region === region);
     const nonEdgeTiles = regionTiles.filter(t => t.adjacentTiles.length === 8 && !t.adjacentTiles.some(a => a.region !== region));

@@ -18,6 +18,7 @@ export class Region extends Coord2D {
         readonly parent: Dungeon,
         x: number,
         y: number,
+        public seed: number,
         public regionType: RegionType,
         public readonly color: string,
         public regionInfluence = 1

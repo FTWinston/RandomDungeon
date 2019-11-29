@@ -1,6 +1,5 @@
 import { Dungeon } from '../model/Dungeon';
 import { DelaySize } from '../generateDungeon';
-import { SRandom } from '../../lib/SRandom';
 import { IGenerationSettings } from '../IGenerationSettings';
 import { RegionType } from '../model/Region';
 import { populateCaveRegion } from './populateCaveRegion';
@@ -12,14 +11,13 @@ export async function createRooms(
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    const random = new SRandom(seed);
     for (const region of dungeon.nodes) {
         switch (region.regionType) {
             case RegionType.Natural:
-                await populateCaveRegion(dungeon, region, random.next(), subStepComplete);
+                await populateCaveRegion(dungeon, region, subStepComplete);
                 break;
             case RegionType.Artificial:
-                await populateRoomRegion(dungeon, region, random.next(), subStepComplete);
+                await populateRoomRegion(dungeon, region, subStepComplete);
                 break;
             default:
                 continue;

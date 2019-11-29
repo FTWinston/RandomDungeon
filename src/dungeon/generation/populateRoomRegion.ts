@@ -6,10 +6,9 @@ import { Region } from '../model/Region';
 export async function populateRoomRegion(
     dungeon: Dungeon,
     region: Region,
-    seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    const random = new SRandom(seed);
+    const random = new SRandom(region.seed);
     let nodeX = Math.floor(region.x);
     let nodeY = Math.floor(region.y);
     let minX: number, minY: number, maxX: number, maxY: number;

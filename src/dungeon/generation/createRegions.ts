@@ -21,8 +21,9 @@ export async function createRegions(
         const y = random.nextInRange(3, dungeon.height - 4);
         const influence = random.nextInRange(0.6, 1.8);
         const regionType = random.nextIntInRange(0, RegionType.NUM_VALUES);
+        const seed = random.next();
         const color = random.nextColor();
-        return new Region(dungeon, x, y, regionType, color, influence);
+        return new Region(dungeon, x, y, seed, regionType, color, influence);
     };
 
     dungeon.nodes = [];

@@ -51,8 +51,9 @@ export const Regions: FunctionComponent<Props> = props => {
                     const cellY = e.offsetY / cellSize;
         
                     // add new node
+                    const seed = Math.random();
                     const regionType = Math.floor(Math.random() * RegionType.NUM_VALUES);
-                    dungeon.nodes.push(new Region(dungeon, cellX, cellY, regionType, randomColor()));
+                    dungeon.nodes.push(new Region(dungeon, cellX, cellY, seed, regionType, randomColor()));
                     redraw();
                 };
 
@@ -130,7 +131,7 @@ export const Regions: FunctionComponent<Props> = props => {
                         return;
                     }
 
-                    // cell.region.seed = Math.random();
+                    cell.region.seed = Math.random();
                     redraw();
                 };
                 break;
