@@ -45,11 +45,12 @@ export const Menu: FunctionComponent<Props> = props => {
             return (
                 <MapSize
                     goBack={switchToMain}
+                    dungeon={props.dungeon}
                     generationSettings={props.generationSettings}
                     setGenerationSettings={props.setGenerationSettings}
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.CreateRooms)}
+                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
                 />
             );
         case MenuPage.Regions:

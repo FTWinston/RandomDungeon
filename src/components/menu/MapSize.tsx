@@ -4,9 +4,11 @@ import { RangeInput } from '../common/RangeInput';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { IRenderSettings, determineRenderSettings } from '../../dungeon/IRenderSettings';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
+import { Dungeon } from '../../dungeon/model/Dungeon';
 
 interface Props {
     goBack: () => void;
+    dungeon: Dungeon;
     generationSettings: IGenerationSettings;
     setGenerationSettings: (settings: IGenerationSettings) => void;
     cellSize: number;
@@ -16,6 +18,11 @@ interface Props {
 
 export const MapSize: FunctionComponent<Props> = props => {
     const setWidth = (val: number) => {
+        const scale = val / props.generationSettings.cellsWide;
+        for (const node of props.dungeon.nodes) {
+            node.x *= scale;
+        }
+
         props.setGenerationSettings({
             ...props.generationSettings,
             cellsWide: val,
@@ -23,6 +30,11 @@ export const MapSize: FunctionComponent<Props> = props => {
     }
 
     const setHeight = (val: number) => {
+        const scale = val / props.generationSettings.cellsHigh;
+        for (const node of props.dungeon.nodes) {
+            node.y *= scale;
+        }
+        
         props.setGenerationSettings({
             ...props.generationSettings,
             cellsHigh: val,
