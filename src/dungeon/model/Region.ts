@@ -3,8 +3,9 @@ import { Dungeon } from './Dungeon';
 import { Pathway } from './Pathway';
 
 export enum RegionType {
-    Natural = 0,
-    Artificial = 1,
+    Junction = 0,
+    Natural = 1,
+    Artificial = 2,
 
     NUM_VALUES,
     FIRST_VALUE = 0,
