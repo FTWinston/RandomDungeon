@@ -16,7 +16,7 @@ export function renderDungeon(
         drawTileGrid(ctx, dungeon, settings);
     }
 
-    if (settings.drawGraph) {
+    if (settings.graphAlpha > 0) {
         drawGraph(ctx, dungeon, settings);
     }
     
@@ -38,8 +38,8 @@ export function renderDungeon(
     }
     
     if (settings.drawNodeLinks) {
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#000';
+        ctx.lineWidth = settings.linkWidth;
+        ctx.strokeStyle = settings.linkColor;
         for (let line of dungeon.lines) {
             drawPath(line, ctx, settings);
         }
@@ -98,25 +98,25 @@ function drawTile(tile: Tile, ctx: CanvasRenderingContext2D, settings: IRenderSe
 }
 
 function drawGraph(ctx: CanvasRenderingContext2D, dungeon: Dungeon, settings: IRenderSettings) {
-    ctx.globalAlpha = 0.25;
+    ctx.globalAlpha = settings.graphAlpha;
     ctx.strokeStyle = '#000';
 
-    ctx.lineWidth = settings.cellSize;
+    ctx.lineWidth = settings.minimumSpanningWidth;
     for (let line of dungeon.minimumSpanningLines) {
         drawPath(line, ctx, settings);
     }
 
-    ctx.lineWidth = settings.cellSize * 0.5;
+    ctx.lineWidth = settings.relativeNeighbourhoodWidth;
     for (let line of dungeon.relativeNeighbourhoodLines) {
         drawPath(line, ctx, settings);
     }
 
-    ctx.lineWidth = settings.cellSize * 0.25;
+    ctx.lineWidth = settings.gabrielWidth;
     for (let line of dungeon.gabrielLines) {
         drawPath(line, ctx, settings);
     }
 
-    ctx.lineWidth = 1;
+    ctx.lineWidth = settings.delauneyWidth;
     for (let line of dungeon.delauneyLines) {
         drawPath(line, ctx, settings);
     }

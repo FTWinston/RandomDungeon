@@ -42,7 +42,7 @@ export const Generate: FunctionComponent<Props> = props => {
     return <div className="menu menu--autoGenerate">
         <button className="menu__link" onClick={props.showSize}>Map size</button>
         <button className="menu__link" onClick={props.showRegions}>Edit regions</button>
-        <button className="menu__link" onClick={props.showConnections}>Regions connections</button>
+        <button className="menu__link" onClick={props.showConnections}>Edit paths</button>
         <button className="menu__link" onClick={props.showRenders}>Renders</button>
 
         <div className="menu__spacer" />

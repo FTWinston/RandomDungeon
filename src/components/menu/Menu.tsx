@@ -8,6 +8,7 @@ import { GenerationSteps } from '../../dungeon/GenerationSteps';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { Regions } from './Regions';
 import { IRenderSettings } from '../../dungeon/IRenderSettings';
+import { Connections } from './Connections';
 
 interface Props {
     isGenerating: boolean;
@@ -62,6 +63,17 @@ export const Menu: FunctionComponent<Props> = props => {
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
                     redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
+                />
+            );
+        case MenuPage.Connections:
+            return (
+                <Connections
+                    goBack={switchToMain}
+                    dungeon={props.dungeon}
+                    dungeonDisplay={props.canvas}
+                    cellSize={props.cellSize}
+                    setRenderSettings={props.setRenderSettings}
+                    redraw={() => props.regenerate(false, GenerationSteps.ExpandLines, GenerationSteps.Render)}
                 />
             );
 

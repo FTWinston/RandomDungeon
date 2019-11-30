@@ -3,7 +3,7 @@ import { GenerationSteps } from './GenerationSteps';
 export interface IRenderSettings {
     nodeAlpha: number;
     regionAlpha: number;
-    drawGraph: boolean;
+    graphAlpha: number;
     drawNodeLinks: boolean;
     drawGrid: boolean;
     drawWalls: boolean;
@@ -11,6 +11,8 @@ export interface IRenderSettings {
     drawOutsidePoints: boolean;
     drawOutside: boolean;
     backgroundColor: string;
+    linkColor: string;
+    linkWidth: number;
     floorColor: string;
     floorGridColor: string;
     floorGridWidth: number;
@@ -20,6 +22,10 @@ export interface IRenderSettings {
     wallWidth: number,
     hatchingWidth: number,
     drawWallsAsFloor: boolean,
+    minimumSpanningWidth: number,
+    relativeNeighbourhoodWidth: number,
+    gabrielWidth: number,
+    delauneyWidth: number,
 }
 
 export function determineRenderSettings(   
@@ -29,7 +35,7 @@ export function determineRenderSettings(
 ): IRenderSettings {
     let nodeAlpha = 0;
     let regionAlpha = 0;
-    let drawGraph = false;
+    let graphAlpha = 0;
     let drawNodeLinks = false;
     let drawGrid = false;
     let drawWalls = false;
@@ -57,7 +63,7 @@ export function determineRenderSettings(
         case GenerationSteps.LinkNodes:
             nodeAlpha = 1;
             regionAlpha = 0.5;
-            drawGraph = true;
+            graphAlpha = 0.25;
             drawGrid = true;
             break;
 
@@ -105,7 +111,7 @@ export function determineRenderSettings(
     return {
         nodeAlpha,
         regionAlpha,
-        drawGraph,
+        graphAlpha,
         drawNodeLinks,
         drawGrid,
         drawWalls,
@@ -114,6 +120,8 @@ export function determineRenderSettings(
         drawOutside,
         floorColor: '#fff',
         floorGridColor: 'rgba(192,192,192,0.5)',
+        linkColor: '#000',
+        linkWidth: 1,
         backgroundColor: '#fff',
         hatchingColor: '#000',
         wallColor: '#000',
@@ -122,5 +130,9 @@ export function determineRenderSettings(
         floorGridWidth: 1,
         hatchingWidth: cellSize * 0.175,
         drawWallsAsFloor,
-    }
+        minimumSpanningWidth: cellSize,
+        relativeNeighbourhoodWidth: cellSize * 0.5,
+        gabrielWidth: cellSize * 0.25,
+        delauneyWidth: 1,
+    };
 }
