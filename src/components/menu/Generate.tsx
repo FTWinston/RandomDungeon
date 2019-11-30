@@ -1,12 +1,12 @@
 import * as React from 'react';
-import { FunctionComponent, useMemo, useEffect } from 'react';
+import { FunctionComponent, useEffect } from 'react';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
 import { IRenderSettings, determineRenderSettings } from '../../dungeon/IRenderSettings';
 
 export interface Props {
     isGenerating: boolean;
-    generate: (generateTo: GenerationSteps) => Promise<void>;
-    regenerate: (animate: boolean, generateFrom: GenerationSteps, generateTo: GenerationSteps) => Promise<void>;
+    generate: () => Promise<void>;
+    animate: () => Promise<void>;
     cellSize: number;
     setRenderSettings: (settings: IRenderSettings) => void;
     skip: () => void;
@@ -19,19 +19,13 @@ export interface Props {
 }
 
 export const Generate: FunctionComponent<Props> = props => {
-    const { generate, regenerate } = props;
-
-    const generateNew = useMemo(() => (() => generate(GenerationSteps.Render)), [generate]);
-    const animate = useMemo(() => (() => regenerate(true, GenerationSteps.AssociateTiles, GenerationSteps.Render)), [regenerate]);
-
     const generateOrSkip = props.isGenerating
         ? <button className="menu__button">Skip step</button>
-        : <button className="menu__button" onClick={generateNew}>Generate new</button>
+        : <button className="menu__button" onClick={props.generate}>Generate new</button>
 
     const animateOrFinish = props.isGenerating
         ? <button className="menu__button">Finish</button>
-        : <button className="menu__button" onClick={animate}>Animate generation</button>
-
+        : <button className="menu__button" onClick={props.animate}>Animate generation</button>
 
     useEffect(() => {
         props.setRenderSettings({

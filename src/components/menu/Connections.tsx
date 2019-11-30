@@ -1,8 +1,11 @@
 import * as React from 'react';
-import { FunctionComponent, useEffect, useState } from 'react';
+import { FunctionComponent, useEffect, useState, useMemo } from 'react';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 import { IRenderSettings, determineRenderSettings } from '../../dungeon/IRenderSettings';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
+import { Pathway } from '../../dungeon/model/Pathway';
+import { getTouchedTiles } from '../../dungeon/generation/linkLinesToGrid';
+import { Tile } from '../../dungeon/model/Tile';
 
 interface Props {
     goBack: () => void;
@@ -38,13 +41,37 @@ export const Connections: FunctionComponent<Props> = props => {
 
     const [mode, setMode] = useState(ConnectionMode.AddRemove);
 
+    const linesByTile = useMemo(() => {
+        const allLines = new Map<Tile, Pathway[]>();
+        for (const line of dungeon.delauneyLines) {
+            const tiles = getTouchedTiles(line, dungeon);
+            for (const tile of tiles) {
+                let tileLines = allLines.get(tile);
+                if (tileLines === undefined) {
+                    tileLines = [];
+                    allLines.set(tile, tileLines);
+                }
+
+                tileLines.push(line);
+            }
+        }
+
+        const singleLineTiles = new Map<Tile, Pathway>();
+        for (const [tile, paths] of allLines) {
+            if (paths.length === 1) {
+                singleLineTiles.set(tile, paths[0]);
+            }
+        }
+
+        return singleLineTiles;
+    }, [dungeon, dungeon.lines, dungeon.delauneyLines]); // eslint-disable-line
+
     // add/remove effect
     useEffect(() => {
         if (dungeonDisplay === undefined) {
             return;
         }
 
-        /*
         let leftClick: (e: MouseEvent) => void;
         let rightClick: (e: MouseEvent) => void;
 
@@ -54,10 +81,24 @@ export const Connections: FunctionComponent<Props> = props => {
                     const cellX = e.offsetX / cellSize;
                     const cellY = e.offsetY / cellSize;
         
-                    // add new node
-                    const seed = Math.random();
-                    const regionType = Math.floor(Math.random() * RegionType.NUM_VALUES);
-                    dungeon.nodes.push(new Region(dungeon, cellX, cellY, seed, regionType, randomColor()));
+                    const cell = dungeon.getTileAt(cellX, cellY);
+                    if (cell === undefined) {
+                        return;
+                    }
+        
+                    const line = linesByTile.get(cell);
+                    if (line === undefined) {
+                        return;
+                    }
+
+                    // add or remove this line
+                    const index = dungeon.lines.indexOf(line);
+                    if (index !== -1) {
+                        dungeon.lines.splice(index, 1);
+                    }
+                    else {
+                        dungeon.lines.push(line);
+                    }
                     redraw();
                 };
 
@@ -65,46 +106,17 @@ export const Connections: FunctionComponent<Props> = props => {
                     const cellX = e.offsetX / cellSize;
                     const cellY = e.offsetY / cellSize;
         
-                    e.preventDefault();
-        
-                    // remove associated node
                     const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined || cell.region === null) {
+                    if (cell === undefined) {
                         return;
                     }
         
-                    const node = cell.region;
-                    dungeon.nodes = dungeon.nodes.filter(n => n !== node);
-        
-                    redraw();
-                };
-                break;
-            case ConnectionMode.Reshape:
-                leftClick = (e: MouseEvent) => {
-                    const cellX = e.offsetX / cellSize;
-                    const cellY = e.offsetY / cellSize;
-        
-                    const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined || cell.region === null) {
+                    const line = linesByTile.get(cell);
+                    if (line === undefined) {
                         return;
                     }
-        
-                    cell.region.regionInfluence *= 1.2;
-                    redraw();
-                };
-        
-                rightClick = (e: MouseEvent) => {
-                    const cellX = e.offsetX / cellSize;
-                    const cellY = e.offsetY / cellSize;
-        
-                    e.preventDefault();
-        
-                    const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined || cell.region === null) {
-                        return;
-                    }
-        
-                    cell.region.regionInfluence /= 1.2;
+
+                    // TODO: something
                     redraw();
                 };
                 break;
@@ -114,13 +126,16 @@ export const Connections: FunctionComponent<Props> = props => {
                     const cellY = e.offsetY / cellSize;
         
                     const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined || cell.region === null) {
+                    if (cell === undefined) {
                         return;
                     }
         
-                    if (++cell.region.regionType >= RegionType.NUM_VALUES) {
-                        cell.region.regionType = RegionType.FIRST_VALUE;
+                    const line = linesByTile.get(cell);
+                    if (line === undefined) {
+                        return;
                     }
+
+                    // TODO: something
                     redraw();
                 };
         
@@ -128,14 +143,17 @@ export const Connections: FunctionComponent<Props> = props => {
                     const cellX = e.offsetX / cellSize;
                     const cellY = e.offsetY / cellSize;
         
-                    e.preventDefault();
-        
                     const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined || cell.region === null) {
+                    if (cell === undefined) {
+                        return;
+                    }
+        
+                    const line = linesByTile.get(cell);
+                    if (line === undefined) {
                         return;
                     }
 
-                    cell.region.seed = Math.random();
+                    // TODO: something
                     redraw();
                 };
                 break;
@@ -150,8 +168,7 @@ export const Connections: FunctionComponent<Props> = props => {
             dungeonDisplay.removeEventListener('click', leftClick);
             dungeonDisplay.removeEventListener('contextmenu', rightClick);
         };
-        */
-    }, [dungeonDisplay, dungeon, redraw, cellSize, mode]);
+    }, [dungeonDisplay, dungeon, dungeon.lines, dungeon.delauneyLines, linesByTile, redraw, cellSize, mode]);
 
     let text: string | undefined;
 

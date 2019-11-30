@@ -4,7 +4,7 @@ import { FunctionComponent, useState, useMemo } from 'react';
 import { Generate } from './Generate';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 import { MapSize } from './MapSize';
-import { GenerationSteps } from '../../dungeon/GenerationSteps';
+import { GenerationSteps, allSteps } from '../../dungeon/GenerationSteps';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { Regions } from './Regions';
 import { IRenderSettings } from '../../dungeon/IRenderSettings';
@@ -18,8 +18,8 @@ interface Props {
     generationSettings: Readonly<IGenerationSettings>;
     setGenerationSettings: (settings: IGenerationSettings) => void;
     setRenderSettings: (settings: IRenderSettings) => void;
-    generate: (generateTo: GenerationSteps) => Promise<void>;
-    regenerate: (animate: boolean, generateFrom: GenerationSteps, generateTo: GenerationSteps) => Promise<void>;
+    generate: () => Promise<void>;
+    regenerate: (animate: boolean, steps: GenerationSteps[]) => Promise<void>;
     skip: () => void;
     finish: () => void;
 }
@@ -40,6 +40,8 @@ export const Menu: FunctionComponent<Props> = props => {
     const switchToRegions = useMemo(() => () => setCurrentPage(MenuPage.Regions), []);
     const switchToConnections = useMemo(() => () => setCurrentPage(MenuPage.Connections), []);
     const switchToRenders = useMemo(() => () => setCurrentPage(MenuPage.Renders), []);
+    
+    const animate = useMemo(() => (() => props.regenerate(true, [GenerationSteps.CreateTiles, ...allSteps.slice(2)])), [props.regenerate]);
 
     switch (currentPage) {
         case MenuPage.Size:
@@ -51,7 +53,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     setGenerationSettings={props.setGenerationSettings}
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
+                    redraw={() => props.regenerate(false, [GenerationSteps.CreateTiles, ...allSteps.slice(2)])} // skip CreateTiles and CreateNodes
                 />
             );
         case MenuPage.Regions:
@@ -62,7 +64,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.AssociateTiles, GenerationSteps.Render)}
+                    redraw={() => props.regenerate(false, [GenerationSteps.CreateTiles, ...allSteps.slice(2)])} // skip CreateTiles and CreateNodes
                 />
             );
         case MenuPage.Connections:
@@ -73,7 +75,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, GenerationSteps.ExpandLines, GenerationSteps.Render)}
+                    redraw={() => props.regenerate(false, [GenerationSteps.CreateTiles, GenerationSteps.AssociateTiles, ...allSteps.slice(5)])} // jump to ExpandLines
                 />
             );
 
@@ -86,7 +88,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     setRenderSettings={props.setRenderSettings}
                     cellSize={props.cellSize}
                     generate={props.generate}
-                    regenerate={props.regenerate}
+                    animate={animate}
                     skip={props.skip}
                     finish={props.finish}
 

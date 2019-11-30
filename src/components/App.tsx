@@ -6,7 +6,7 @@ import { Dungeon } from '../dungeon/model/Dungeon';
 import './App.css';
 import { renderDungeon } from '../dungeon/renderDungeon';
 import { generateDungeon, regenerateDungeon } from '../dungeon/generateDungeon';
-import { GenerationSteps } from '../dungeon/GenerationSteps';
+import { GenerationSteps, allSteps } from '../dungeon/GenerationSteps';
 import { determineRenderSettings, IRenderSettings } from '../dungeon/IRenderSettings';
 import { IGenerationSettings } from '../dungeon/IGenerationSettings';
 
@@ -22,9 +22,8 @@ export const App: FunctionComponent = () => {
     
     const [generationSettings, setGenerationSettings] = useState<IGenerationSettings>({
         seed: 0,
-        generateFrom: GenerationSteps.FIRST_STEP,
-        generateTo: GenerationSteps.Render,
-        animateFrom: GenerationSteps.Render,
+        steps: allSteps,
+        animateSteps: [],
         cellsWide: 100,
         cellsHigh: 70,
         nodeCount: 25,
@@ -36,13 +35,12 @@ export const App: FunctionComponent = () => {
         },
     });
 
-    const generate = async (generateTo: GenerationSteps) => {
-        const settings = {
+    const generate = async () => {
+        const settings: IGenerationSettings = {
             ...generationSettings,
             seed: Math.random(),
-            animateFrom: GenerationSteps.Render,
-            generateFrom: GenerationSteps.FIRST_STEP,
-            generateTo,
+            steps: allSteps,
+            animateSteps: [],
         };
 
         setGenerationSettings(settings);
@@ -58,26 +56,13 @@ export const App: FunctionComponent = () => {
         }
     }
 
-    const regenerate = async (animate: boolean, regenerateFrom: GenerationSteps, generateTo: GenerationSteps) => {
-        // clear the grid if regenerating
-        if (regenerateFrom !== GenerationSteps.FIRST_STEP) {
-            await regenerateDungeon(dungeon, {
-                ...generationSettings,
-                animateFrom: GenerationSteps.Render,
-                generateFrom: GenerationSteps.CreateTiles,
-                generateTo: GenerationSteps.CreateTiles,
-            });
-        }
-
+    const regenerate = async (animate: boolean, steps: GenerationSteps[]) => {
         setGenerating(true);
 
         await regenerateDungeon(dungeon, {
             ...generationSettings,
-            animateFrom: animate
-                ? regenerateFrom
-                : GenerationSteps.Render,
-            generateFrom: regenerateFrom,
-            generateTo,
+            steps,
+            animateSteps: animate ? steps.slice() : [],
         });
 
         setGenerating(false);
@@ -87,10 +72,10 @@ export const App: FunctionComponent = () => {
         }
     }
 
-    const skip = () => generationSettings.animateFrom++;
-    const finish = () => generationSettings.animateFrom = GenerationSteps.Render;
+    const skip = () => generationSettings.animateSteps.splice(0, 1); // TODO: these weren't working
+    const finish = () => generationSettings.animateSteps = [];
 
-    useEffect(() => { generate(GenerationSteps.Render) }, []); // eslint-disable-line
+    useEffect(() => { generate(); }, []); // eslint-disable-line
 
     const setRenderSettingsAndRender = (renderSettings: IRenderSettings) => {
         setRenderSettings(renderSettings);

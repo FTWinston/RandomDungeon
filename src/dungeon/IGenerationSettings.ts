@@ -7,9 +7,7 @@ export interface IGenerationSettings {
     cellsWide: number;
     cellsHigh: number;
     connectivity: number;
-
-    generateFrom: GenerationSteps;
-    generateTo: GenerationSteps;
-    animateFrom: GenerationSteps;
+    steps: GenerationSteps[];
+    animateSteps: GenerationSteps[];
     redraw: (dungeon: Dungeon, step: GenerationSteps, stepComplete: boolean) => void,
 }

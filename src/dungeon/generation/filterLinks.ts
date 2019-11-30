@@ -14,12 +14,14 @@ export async function filterLinks(
     let selectFraction: number;
         
     if (settings.connectivity < 50) {
+        console.log('setting lines A');
         dungeon.lines = dungeon.minimumSpanningLines.slice();
 
         selectingFrom = dungeon.relativeNeighbourhoodLines.filter(l => dungeon.lines.indexOf(l) === -1);
 
         selectFraction = settings.connectivity / 50;
     } else {
+        console.log('setting lines B');
         dungeon.lines = dungeon.relativeNeighbourhoodLines.slice();
 
         selectingFrom = dungeon.gabrielLines.filter(l => dungeon.lines.indexOf(l) === -1);

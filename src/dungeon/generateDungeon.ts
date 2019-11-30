@@ -46,33 +46,30 @@ export async function regenerateDungeon(
 
     const seedGenerator = new SRandom(settings.seed);
     
-    const steps: Array<[GenerationSteps, GenerationStep, DelaySize]> = [
-        [GenerationSteps.CreateTiles, createTiles, DelaySize.None],
-        [GenerationSteps.CreateNodes, createRegions, DelaySize.Large],
-        [GenerationSteps.AssociateTiles, associateTilesWithNodes, DelaySize.Large],
-        [GenerationSteps.LinkNodes, populateLinks, DelaySize.Large],
-        [GenerationSteps.FilterLinks, filterLinks, DelaySize.Large],
-        [GenerationSteps.ExpandLines, linkLinesToGrid, DelaySize.Large],
-        [GenerationSteps.CreateRooms, createRooms, DelaySize.Large],
-        [GenerationSteps.DetectWalls, detectWalls, DelaySize.Large],
-        [GenerationSteps.CurveWalls, generateWallCurves, DelaySize.Large],
-        [GenerationSteps.FillBackdrop, fillBackdrop, DelaySize.Large],
-    ];
+    const stepFunctions = new Map<GenerationSteps, GenerationStep>([
+        [GenerationSteps.CreateTiles, createTiles],
+        [GenerationSteps.CreateNodes, createRegions],
+        [GenerationSteps.AssociateTiles, associateTilesWithNodes],
+        [GenerationSteps.LinkNodes, populateLinks],
+        [GenerationSteps.FilterLinks, filterLinks],
+        [GenerationSteps.ExpandLines, linkLinesToGrid],
+        [GenerationSteps.CreateRooms, createRooms],
+        [GenerationSteps.DetectWalls, detectWalls],
+        [GenerationSteps.CurveWalls, generateWallCurves],
+        [GenerationSteps.FillBackdrop, fillBackdrop],    
+    ]);
 
-    for (const [step, operation, endDelay] of steps) {
-        const stepSeed = seedGenerator.next();
-
-        if (settings.generateFrom > step) {
+    for (const step of settings.steps) {
+        const operation = stepFunctions.get(step);
+        if (operation === undefined) {
             continue;
         }
 
-        if (settings.generateTo < step) {
-            break;
-        }
+        const stepSeed = seedGenerator.next();
 
-        const subStepReached = settings.animateFrom <= step
+        const subStepReached = settings.animateSteps.indexOf(step) !== -1
             ? async (interval: DelaySize) => {
-                if (settings.animateFrom > step) {
+                if (settings.animateSteps.indexOf(step) === -1) {
                     return; // give up on animation
                 }
 
@@ -83,9 +80,9 @@ export async function regenerateDungeon(
         
         await operation(dungeon, settings, stepSeed, subStepReached);
         
-        if (settings.animateFrom <= step && endDelay > DelaySize.None) {
+        if (settings.animateSteps.indexOf(step) !== -1 && step !== GenerationSteps.CreateTiles) {
             settings.redraw(dungeon, step, true);
-            await delay(endDelay);
+            await delay(DelaySize.Large);
         }
     }
 }
