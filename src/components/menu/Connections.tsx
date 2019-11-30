@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FunctionComponent, useEffect, useState, useMemo } from 'react';
+import { FunctionComponent, useEffect, useState } from 'react';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 import { IRenderSettings, determineRenderSettings } from '../../dungeon/IRenderSettings';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
@@ -41,30 +41,7 @@ export const Connections: FunctionComponent<Props> = props => {
 
     const [mode, setMode] = useState(ConnectionMode.AddRemove);
 
-    const linesByTile = useMemo(() => {
-        const allLines = new Map<Tile, Pathway[]>();
-        for (const line of dungeon.delauneyLines) {
-            const tiles = getTouchedTiles(line, dungeon);
-            for (const tile of tiles) {
-                let tileLines = allLines.get(tile);
-                if (tileLines === undefined) {
-                    tileLines = [];
-                    allLines.set(tile, tileLines);
-                }
-
-                tileLines.push(line);
-            }
-        }
-
-        const singleLineTiles = new Map<Tile, Pathway>();
-        for (const [tile, paths] of allLines) {
-            if (paths.length === 1) {
-                singleLineTiles.set(tile, paths[0]);
-            }
-        }
-
-        return singleLineTiles;
-    }, [dungeon, dungeon.lines, dungeon.delauneyLines]); // eslint-disable-line
+    const linesByTile = getLinesByTile(dungeon); // I tried to memoise this, but it didn't work
 
     // add/remove effect
     useEffect(() => {
@@ -94,10 +71,16 @@ export const Connections: FunctionComponent<Props> = props => {
                     // add or remove this line
                     const index = dungeon.lines.indexOf(line);
                     if (index !== -1) {
-                        dungeon.lines.splice(index, 1);
+                        dungeon.lines = [
+                            ...dungeon.lines.slice(0, index),
+                            ...dungeon.lines.slice(index + 1),
+                        ];
                     }
                     else {
-                        dungeon.lines.push(line);
+                        dungeon.lines = [
+                            ...dungeon.lines,
+                            line
+                        ];
                     }
                     redraw();
                 };
@@ -193,4 +176,29 @@ export const Connections: FunctionComponent<Props> = props => {
             {text}
         </div>
     </div>
+}
+
+function getLinesByTile(dungeon: Dungeon) {
+    const allLines = new Map<Tile, Pathway[]>();
+    for (const line of dungeon.delauneyLines) {
+        const tiles = getTouchedTiles(line, dungeon);
+        for (const tile of tiles) {
+            let tileLines = allLines.get(tile);
+            if (tileLines === undefined) {
+                tileLines = [];
+                allLines.set(tile, tileLines);
+            }
+
+            tileLines.push(line);
+        }
+    }
+
+    const singleLineTiles = new Map<Tile, Pathway>();
+    for (const [tile, paths] of allLines) {
+        if (paths.length === 1) {
+            singleLineTiles.set(tile, paths[0]);
+        }
+    }
+
+    return singleLineTiles;
 }

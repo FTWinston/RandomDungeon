@@ -41,7 +41,9 @@ export const Menu: FunctionComponent<Props> = props => {
     const switchToConnections = useMemo(() => () => setCurrentPage(MenuPage.Connections), []);
     const switchToRenders = useMemo(() => () => setCurrentPage(MenuPage.Renders), []);
     
-    const animate = useMemo(() => (() => props.regenerate(true, [GenerationSteps.CreateTiles, ...allSteps.slice(2)])), [props.regenerate]);
+    const { regenerate } = props;
+
+    const animate = useMemo(() => (() => regenerate(true, [GenerationSteps.CreateTiles, ...allSteps.slice(2)])), [regenerate]);
 
     switch (currentPage) {
         case MenuPage.Size:
