@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { FunctionComponent, useEffect, useState } from 'react';
+import { FunctionComponent, useEffect } from 'react';
 import { Dungeon } from '../../dungeon/model/Dungeon';
 import { IRenderSettings, determineRenderSettings } from '../../dungeon/IRenderSettings';
 import { GenerationSteps } from '../../dungeon/GenerationSteps';
@@ -8,17 +8,11 @@ import { getTouchedTiles } from '../../dungeon/generation/linkLinesToGrid';
 import { Tile } from '../../dungeon/model/Tile';
 
 interface Props {
-    goBack: () => void;
     dungeon: Dungeon;
     dungeonDisplay?: HTMLElement;
     cellSize: number;
     setRenderSettings: (settings: IRenderSettings) => void;
     redraw: () => void;
-}
-
-enum ConnectionMode {
-    AddRemove,
-    Doors,
 }
 
 export const Connections: FunctionComponent<Props> = props => {
@@ -39,8 +33,6 @@ export const Connections: FunctionComponent<Props> = props => {
         });
     }, []); // eslint-disable-line
 
-    const [mode, setMode] = useState(ConnectionMode.AddRemove);
-
     const linesByTile = getLinesByTile(dungeon); // I tried to memoise this, but it didn't work
 
     // add/remove effect
@@ -49,132 +41,46 @@ export const Connections: FunctionComponent<Props> = props => {
             return;
         }
 
-        let leftClick: (e: MouseEvent) => void;
-        let rightClick: (e: MouseEvent) => void;
+        const leftClick = (e: MouseEvent) => {
+            const cellX = e.offsetX / cellSize;
+            const cellY = e.offsetY / cellSize;
 
-        switch (mode) {
-            case ConnectionMode.AddRemove:
-                leftClick = (e: MouseEvent) => {
-                    const cellX = e.offsetX / cellSize;
-                    const cellY = e.offsetY / cellSize;
-        
-                    const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined) {
-                        return;
-                    }
-        
-                    const line = linesByTile.get(cell);
-                    if (line === undefined) {
-                        return;
-                    }
+            const cell = dungeon.getTileAt(cellX, cellY);
+            if (cell === undefined) {
+                return;
+            }
 
-                    // add or remove this line
-                    const index = dungeon.lines.indexOf(line);
-                    if (index !== -1) {
-                        dungeon.lines = [
-                            ...dungeon.lines.slice(0, index),
-                            ...dungeon.lines.slice(index + 1),
-                        ];
-                    }
-                    else {
-                        dungeon.lines = [
-                            ...dungeon.lines,
-                            line
-                        ];
-                    }
-                    redraw();
-                };
+            const line = linesByTile.get(cell);
+            if (line === undefined) {
+                return;
+            }
 
-                rightClick = (e: MouseEvent) => {
-                    const cellX = e.offsetX / cellSize;
-                    const cellY = e.offsetY / cellSize;
-        
-                    const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined) {
-                        return;
-                    }
-        
-                    const line = linesByTile.get(cell);
-                    if (line === undefined) {
-                        return;
-                    }
-
-                    // TODO: something
-                    redraw();
-                };
-                break;
-            case ConnectionMode.Doors:
-                leftClick = (e: MouseEvent) => {
-                    const cellX = e.offsetX / cellSize;
-                    const cellY = e.offsetY / cellSize;
-        
-                    const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined) {
-                        return;
-                    }
-        
-                    const line = linesByTile.get(cell);
-                    if (line === undefined) {
-                        return;
-                    }
-
-                    // TODO: something
-                    redraw();
-                };
-        
-                rightClick = (e: MouseEvent) => {
-                    const cellX = e.offsetX / cellSize;
-                    const cellY = e.offsetY / cellSize;
-        
-                    const cell = dungeon.getTileAt(cellX, cellY);
-                    if (cell === undefined) {
-                        return;
-                    }
-        
-                    const line = linesByTile.get(cell);
-                    if (line === undefined) {
-                        return;
-                    }
-
-                    // TODO: something
-                    redraw();
-                };
-                break;
-            default:
-                return;       
-        }
+            // add or remove this line
+            const index = dungeon.lines.indexOf(line);
+            if (index !== -1) {
+                dungeon.lines = [
+                    ...dungeon.lines.slice(0, index),
+                    ...dungeon.lines.slice(index + 1),
+                ];
+            }
+            else {
+                dungeon.lines = [
+                    ...dungeon.lines,
+                    line
+                ];
+            }
+            redraw();
+        };
 
         dungeonDisplay.addEventListener('click', leftClick);
-        dungeonDisplay.addEventListener('contextmenu', rightClick);
 
         return () => {
             dungeonDisplay.removeEventListener('click', leftClick);
-            dungeonDisplay.removeEventListener('contextmenu', rightClick);
         };
-    }, [dungeonDisplay, dungeon, dungeon.lines, dungeon.delauneyLines, linesByTile, redraw, cellSize, mode]);
+    }, [dungeonDisplay, dungeon, dungeon.lines, linesByTile, redraw, cellSize]);
 
-    let text: string | undefined;
-
-    switch (mode) {
-        case ConnectionMode.AddRemove:
-            text = "Left click the map to toggle a pathway on / off. Right click to regenerate a pathway.";
-            break;
-        case ConnectionMode.Doors:
-            text = "Left click on a pathway to toggle a door. Right click to toggle a secret door.";
-            break;
-    }
-
-    return <div className="menu menu--regionPlacement">
-        <button className="menu__button menu__button--back" onClick={props.goBack}>Go back</button>
-
-        <ul className="menu__choice">
-            <li className={mode === ConnectionMode.AddRemove ? 'menu__selector menu__selector--active' : 'menu__selector'} onClick={() => setMode(ConnectionMode.AddRemove)}>Add/remove paths</li>
-            <li className={mode === ConnectionMode.Doors ? 'menu__selector menu__selector--active' : 'menu__selector'} onClick={() => setMode(ConnectionMode.Doors)}>Add/remove doors</li>
-        </ul>
-
-        <div className="menu__section">
-            {text}
-        </div>
+    return <div className="menu__section">
+        Left click the map to toggle a pathway on / off.
     </div>
 }
 

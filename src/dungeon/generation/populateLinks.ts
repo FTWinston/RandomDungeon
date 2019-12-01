@@ -17,7 +17,6 @@ export async function populateLinks(
     seed: number,
     subStepComplete?: (interval: DelaySize) => Promise<void>,
 ) {
-    console.log('setting lines C');
     dungeon.lines = [];
     dungeon.delauneyLines = [];
     dungeon.gabrielLines = [];

@@ -8,7 +8,6 @@ import { GenerationSteps, allSteps } from '../../dungeon/GenerationSteps';
 import { IGenerationSettings } from '../../dungeon/IGenerationSettings';
 import { Regions } from './Regions';
 import { IRenderSettings } from '../../dungeon/IRenderSettings';
-import { Connections } from './Connections';
 
 interface Props {
     isGenerating: boolean;
@@ -28,7 +27,6 @@ enum MenuPage {
     Main,
     Size,
     Regions,
-    Connections,
     Renders,
 }
 
@@ -38,7 +36,6 @@ export const Menu: FunctionComponent<Props> = props => {
     const switchToMain = useMemo(() => () => setCurrentPage(MenuPage.Main), []);
     const switchToSize = useMemo(() => () => setCurrentPage(MenuPage.Size), []);
     const switchToRegions = useMemo(() => () => setCurrentPage(MenuPage.Regions), []);
-    const switchToConnections = useMemo(() => () => setCurrentPage(MenuPage.Connections), []);
     const switchToRenders = useMemo(() => () => setCurrentPage(MenuPage.Renders), []);
     
     const { regenerate } = props;
@@ -66,18 +63,7 @@ export const Menu: FunctionComponent<Props> = props => {
                     dungeonDisplay={props.canvas}
                     cellSize={props.cellSize}
                     setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, [GenerationSteps.CreateTiles, ...allSteps.slice(2)])} // skip CreateTiles and CreateNodes
-                />
-            );
-        case MenuPage.Connections:
-            return (
-                <Connections
-                    goBack={switchToMain}
-                    dungeon={props.dungeon}
-                    dungeonDisplay={props.canvas}
-                    cellSize={props.cellSize}
-                    setRenderSettings={props.setRenderSettings}
-                    redraw={() => props.regenerate(false, [GenerationSteps.CreateTiles, GenerationSteps.AssociateTiles, ...allSteps.slice(5)])} // jump to ExpandLines
+                    regenerate={steps => props.regenerate(false, steps)}
                 />
             );
 
@@ -96,7 +82,6 @@ export const Menu: FunctionComponent<Props> = props => {
 
                     showSize={switchToSize}
                     showRegions={switchToRegions}
-                    showConnections={switchToConnections}
                     showRenders={switchToRenders}
                 />
             );
