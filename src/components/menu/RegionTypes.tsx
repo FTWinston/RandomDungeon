@@ -20,6 +20,7 @@ export const RegionTypes: FunctionComponent<Props> = props => {
         props.setRenderSettings({
             ...determineRenderSettings(GenerationSteps.DetectWalls, true, props.cellSize),
             regionAlpha: 0.5,
+            nodeAlpha: 1.0,
             drawWallsAsFloor: false,
         });
     }, []); // eslint-disable-line
