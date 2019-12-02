@@ -50,3 +50,9 @@
 .menu__selector:not(.menu__selector--active) {
     cursor: pointer;
 }
+
+.menu__section {
+    padding: 0 1em;
+    display: flex;
+    align-items: center;
+}
